@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Lịch sử đặt vé')}"></head>
+<body>
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="container py-5" style="min-height: 60vh;">
+  <h3 class="fw-bold mb-4 border-start border-4 border-primary ps-3">Lịch sử chuyến đi của bạn</h3>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+          <tr>
+            <th class="py-3 ps-4">Mã đơn</th>
+            <th>Tour du lịch</th>
+            <th>Ngày khởi hành</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="b : ${bookings}">
+            <td class="ps-4 fw-bold text-primary">#[[${b.bookingCode}]]</td>
+            <td>
+              <div class="fw-bold" th:text="${b.schedule.tour.name}">Tên Tour</div>
+              <small class="text-muted" th:text="${b.schedule.tour.duration}">3N2D</small>
+            </td>
+            <td th:text="${#temporals.format(b.schedule.startDate, 'dd/MM/yyyy')}">10/10/2025</td>
+            <td class="fw-bold text-danger">[[${#numbers.formatDecimal(b.totalAmount, 0, 'COMMA', 0, 'POINT')}]] đ</td>
+            <td>
+              <span th:if="${b.status == 'PENDING'}" class="badge bg-warning text-dark">Chờ thanh toán</span>
+              <span th:if="${b.status == 'PAID_FULL'}" class="badge bg-success">Đã thanh toán</span>
+              <span th:if="${b.status == 'CANCELLED'}" class="badge bg-secondary">Đã hủy</span>
+            </td>
+            <td>
+              <a th:href="@{/booking/detail/{id}(id=${b.id})}" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+            </td>
+          </tr>
+
+          <tr th:if="${bookings == null || bookings.isEmpty()}">
+            <td colspan="6" class="text-center py-5">
+              <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" width="80" class="opacity-50 mb-3">
+              <p class="text-muted">Bạn chưa đặt chuyến đi nào!</p>
+              <a href="/" class="btn btn-primary btn-sm">Khám phá ngay</a>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+</body>
+</html>

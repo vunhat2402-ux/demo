@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head th:replace="~{admin/fragments :: head('Quản lý Tài khoản')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <h3 class="mb-4 text-primary"><i class="bi bi-people"></i> Quản lý Tài khoản</h3>
+
+            <div class="card shadow-sm mb-5 border-warning border-top border-4" sec:authorize="hasRole('ADMIN')">
+
+                <div class="card-header bg-white fw-bold text-warning d-flex justify-content-between align-items-center">
+
+    <span>
+        <i class="bi bi-person-badge-fill"></i> DANH SÁCH NHÂN SỰ
+    </span>
+
+                    <a sec:authorize="hasRole('ADMIN')" href="/admin/users/create" class="btn btn-sm btn-warning shadow-sm">
+                        <i class="bi bi-plus-lg"></i> Thêm nhân viên
+                    </a>
+
+                </div>
+
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>ID</th> <th>Họ tên</th> <th>Email</th> <th>Trạng thái</th> <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="u : ${staffList}">
+                            <td th:text="${u.id}"></td>
+                            <td class="fw-bold" th:text="${u.fullName}"></td>
+                            <td th:text="${u.email}"></td>
+                            <td>
+                                <span th:if="${!u.locked}" class="badge bg-success">Hoạt động</span>
+                                <span th:if="${u.locked}" class="badge bg-danger">Đã khóa</span>
+                            </td>
+                            <td>
+                                <a th:href="@{'/admin/users/edit/' + ${u.id}}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Sửa</a>
+
+                                <a th:href="@{'/admin/users/toggle-lock/' + ${u.id}}"
+                                   class="btn btn-sm"
+                                   th:classappend="${u.locked ? 'btn-success' : 'btn-warning'}"
+                                   onclick="return confirm('Bạn muốn đổi trạng thái tài khoản này?')">
+                                    <i th:class="${u.locked ? 'bi bi-unlock' : 'bi bi-lock'}"></i>
+                                    <span th:text="${u.locked ? 'Mở' : 'Khóa'}"></span>
+                                </a>
+
+                                <a th:href="@{'/admin/users/delete/' + ${u.id}}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa nhân viên này?')"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-info border-top border-4">
+                <div class="card-header bg-white fw-bold text-info">
+                    <i class="bi bi-people-fill"></i> DANH SÁCH KHÁCH HÀNG
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>ID</th> <th>Họ tên</th> <th>Email</th> <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="u : ${customerList}">
+                            <td th:text="${u.id}"></td>
+                            <td class="fw-bold" th:text="${u.fullName}"></td>
+                            <td th:text="${u.email}"></td>
+                            <td>
+                                <a th:href="@{'/admin/users/detail/' + ${u.id}}" class="btn btn-sm btn-info text-white"><i class="bi bi-eye"></i> Chi tiết</a>
+
+                                <a sec:authorize="hasRole('ADMIN')"
+                                   th:href="@{'/admin/users/delete/' + ${u.id}}"
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Xóa khách hàng này? (Các đơn hàng cũ cũng sẽ bị ảnh hưởng)')">
+                                    <i class="bi bi-trash"></i> Xóa
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

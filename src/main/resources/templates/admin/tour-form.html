@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Cập nhật Tour')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <h3 class="mb-4 text-primary">✏️ Cập nhật thông tin Tour</h3>
+            <div class="card shadow-sm border-top border-primary border-4">
+                <div class="card-body">
+                    <form action="/admin/tours/save" method="post" th:object="${tour}">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tên Tour</label>
+                                <input type="text" th:field="*{name}" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Mã Tour (Dùng để quản lý nội bộ)</label>
+                                <input type="text" th:field="*{code}" class="form-control text-uppercase"
+                                       placeholder="Ví dụ: TO-HG-2026" required>
+                                <small class="text-muted">Lưu ý: Mã này không được trùng lặp.</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Điểm đến</label>
+                                <select name="destinationId" class="form-select">
+                                    <option value="">-- Chọn điểm đến --</option>
+                                    <option th:each="d : ${destinations}"
+                                            th:value="${d.id}"
+                                            th:text="${d.name}"
+                                            th:selected="${tour.destination != null and tour.destination.id == d.id}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Danh mục</label>
+                                <select name="categoryId" class="form-select">
+                                    <option value="">-- Chọn danh mục --</option>
+                                    <option th:each="c : ${categories}"
+                                            th:value="${c.id}"
+                                            th:text="${c.name}"
+                                            th:selected="${tour.category != null and tour.category.id == c.id}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Nơi khởi hành</label>
+                                    <input type="text" th:field="*{departurePoint}" class="form-control" placeholder="Ví dụ: TP. Hồ Chí Minh" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Phương tiện</label>
+                                    <input type="text" th:field="*{transport}" class="form-control" placeholder="Máy bay, Ô tô..." required>
+                                </div>
+                            </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mô tả ngắn</label>
+                            <textarea th:field="*{description}" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu thay đổi</button>
+                        <a href="/admin/tours" class="btn btn-secondary">Hủy</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

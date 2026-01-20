@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Danh sách Tour')}"></head>
+<body>
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="bg-primary py-5 mb-5 text-center text-white"
+     style="background: linear-gradient(rgba(13, 110, 253, 0.9), rgba(13, 110, 253, 0.8)), url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1920'); background-size: cover; background-position: center;">
+    <h1 class="fw-bold">KHÁM PHÁ CÁC ĐIỂM ĐẾN</h1>
+    <p class="lead mb-0">Hàng trăm tour du lịch hấp dẫn đang chờ bạn</p>
+</div>
+
+<div class="container mb-5">
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4" th:each="tour : ${tourPage.content}">
+            <div class="card h-100 tour-card">
+                <div class="position-relative" style="height: 240px; overflow: hidden;">
+                    <img th:src="${tour.images != null && !tour.images.isEmpty() ? tour.images[0].imageUrl : 'https://via.placeholder.com/400x250'}"
+                         class="w-100 h-100 object-fit-cover" style="object-fit: cover;">
+
+                    <button class="btn btn-light rounded-circle position-absolute top-0 end-0 m-3 shadow-sm text-danger"
+                            style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; z-index: 10;"
+                            th:onclick="'toggleFavorite(this, ' + ${tour.id} + ')'">
+                        <i class="fa-regular fa-heart"></i>
+                    </button>
+                    <div class="price-badge">
+                        <span th:text="${tour.schedules != null && !tour.schedules.isEmpty() ? #numbers.formatDecimal(tour.schedules[0].priceAdult, 0, 'COMMA', 0, 'POINT') : 'Liên hệ'}"></span>
+                        <small th:if="${tour.schedules != null && !tour.schedules.isEmpty()}">đ</small>
+                    </div>
+                </div>
+
+                <div class="card-body pt-4">
+                    <h5 class="card-title fw-bold text-dark text-truncate" th:text="${tour.name}"></h5>
+
+                    <div class="d-flex justify-content-between text-muted small my-3">
+                        <span><i class="fa-regular fa-clock text-primary"></i> [[${tour.duration}]]</span>
+                        <span><i class="fa-solid fa-location-dot text-danger"></i> [[${tour.departurePoint}]]</span>
+                    </div>
+
+                    <a th:href="@{/tour/{id}(id=${tour.id})}" class="btn btn-outline-primary w-100 rounded-pill fw-bold">
+                        Xem chi tiết
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center mt-5" th:if="${tourPage.totalPages > 1}">
+        <nav>
+            <ul class="pagination">
+                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                    <a class="page-link" th:href="@{/tours(page=${currentPage - 1})}">Trước</a>
+                </li>
+                <li class="page-item active"><span class="page-link">[[${currentPage + 1}]]</span></li>
+                <li class="page-item" th:classappend="${currentPage == tourPage.totalPages - 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/tours(page=${currentPage + 1})}">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+</body>
+</html>

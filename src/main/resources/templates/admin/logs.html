@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Nhật ký hoạt động')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <h3 class="text-danger"><i class="bi bi-shield-lock"></i> Nhật ký hoạt động hệ thống</h3>
+            <p class="text-muted">Ghi lại toàn bộ thao tác của nhân viên.</p>
+
+            <div class="card shadow-sm">
+                <table class="table table-striped mb-0">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Nhân viên</th>
+                        <th>Hành động</th>
+                        <th>Chi tiết</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="log : ${logs}">
+                        <td th:text="${#temporals.format(log.timestamp, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                        <td>
+                            <span class="fw-bold" th:text="${log.user.fullName}"></span><br>
+                            <small class="text-muted" th:text="${log.user.email}"></small>
+                        </td>
+                        <td><span class="badge bg-secondary" th:text="${log.action}"></span></td>
+                        <td th:text="${log.description}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

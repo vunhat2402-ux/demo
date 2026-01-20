@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Danh sách yêu thích')}"></head>
+<body>
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="bg-light py-5" style="min-height: 80vh;">
+    <div class="container">
+        <h3 class="fw-bold mb-4 text-danger border-start border-4 border-danger ps-3">
+            <i class="fa-solid fa-heart me-2"></i>Tour đã yêu thích
+        </h3>
+
+        <div th:if="${favorites == null || favorites.isEmpty()}" class="text-center py-5 bg-white rounded-3 shadow-sm">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077035.png" width="80" class="opacity-50 mb-3">
+            <p class="text-muted fs-5">Bạn chưa yêu thích tour nào.</p>
+            <a href="/tours" class="btn btn-primary rounded-pill px-4">Khám phá ngay</a>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4" th:each="fav : ${favorites}">
+                <div class="card h-100 border-0 shadow-sm tour-card position-relative">
+
+                    <button class="btn btn-light text-secondary position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
+                            style="width: 35px; height: 35px; z-index: 10;"
+                            th:onclick="'toggleFavorite(this, ' + ${fav.tour.id} + '); removeCard(this)'"
+                            title="Bỏ thích">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                    <div class="position-relative" style="height: 220px; overflow: hidden;">
+                        <img th:src="${fav.tour.images != null && !fav.tour.images.isEmpty() ? fav.tour.images[0].imageUrl : 'https://via.placeholder.com/400x250'}"
+                             class="w-100 h-100 object-fit-cover rounded-top">
+                        <div class="price-badge" th:if="${!fav.tour.schedules.isEmpty()}">
+                            [[${#numbers.formatDecimal(fav.tour.schedules[0].priceAdult, 0, 'COMMA', 0, 'POINT')}]] đ
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold text-truncate">
+                            <a th:href="@{/tour/{slug}(slug=${fav.tour.slug})}" class="text-dark text-decoration-none" th:text="${fav.tour.name}"></a>
+                        </h5>
+                        <div class="d-flex justify-content-between text-muted small mt-2">
+                            <span><i class="fa-regular fa-clock text-primary"></i> [[${fav.tour.duration}]]</span>
+                            <span><i class="fa-solid fa-location-dot text-danger"></i> [[${fav.tour.departurePoint}]]</span>
+                        </div>
+                        <hr>
+                        <a th:href="@{/tour/{slug}(slug=${fav.tour.slug})}" class="btn btn-outline-primary w-100 rounded-pill">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+
+<script>
+    function removeCard(btn) {
+        if(confirm('Bạn muốn bỏ tour này khỏi danh sách yêu thích?')) {
+            // Tìm thẻ card cha và xóa nó đi
+            const cardCol = btn.closest('.col-md-6');
+            if(cardCol) {
+                cardCol.style.transition = 'all 0.5s';
+                cardCol.style.opacity = '0';
+                setTimeout(() => cardCol.remove(), 500);
+            }
+        }
+    }
+</script>
+
+</body>
+</html>

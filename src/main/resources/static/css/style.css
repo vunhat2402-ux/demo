@@ -1,0 +1,50 @@
+/* Layout chính: Chia màn hình làm 2 phần (Sidebar + Content) */
+#wrapper {
+    overflow-x: hidden;
+    display: flex; /* Xếp ngang */
+}
+
+/* Sidebar (Cột menu trái) */
+#sidebar-wrapper {
+    min-height: 100vh;
+    width: 250px; /* Chiều rộng cố định */
+    margin-left: -250px; /* Mặc định ẩn trên mobile */
+    transition: margin 0.25s ease-out; /* Hiệu ứng trượt */
+    background-color: #212529; /* Màu tối */
+}
+
+/* Phần nội dung bên phải */
+#page-content-wrapper {
+    width: 100%;
+    transition: all 0.25s ease-out;
+}
+
+/* Khi màn hình to (Desktop): Hiện Sidebar */
+@media (min-width: 768px) {
+    #sidebar-wrapper {
+        margin-left: 0;
+    }
+    #page-content-wrapper {
+        width: 100%;
+    }
+    /* Khi class 'toggled' được thêm vào: Ẩn Sidebar đi */
+    body.sb-sidenav-toggled #sidebar-wrapper {
+        margin-left: -250px;
+    }
+}
+
+/* Trang trí Link trong menu */
+.list-group-item {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    border: none;
+}
+.list-group-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+.list-group-item.active {
+    background-color: #0d6efd;
+    color: #fff;
+    font-weight: bold;
+}

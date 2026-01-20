@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Xác nhận đặt Tour')}"></head>
+
+<body class="bg-light">
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="container py-5">
+    <div class="row g-5">
+
+        <div class="col-md-5 col-lg-4 order-md-last">
+            <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 100px;">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h5 class="fw-bold text-primary mb-0">Vé của bạn</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-3 mb-3">
+                        <img th:src="${schedule.tour.images != null && !schedule.tour.images.isEmpty() ? schedule.tour.images[0].imageUrl : 'https://via.placeholder.com/100'}"
+                             class="rounded-3 object-fit-cover" style="width: 80px; height: 80px;">
+                        <div>
+                            <h6 class="fw-bold text-dark small mb-1" th:text="${schedule.tour.name}">Tên Tour</h6>
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-2">
+                                <i class="fa-regular fa-clock me-1"></i> [[${schedule.tour.duration}]]
+                            </span>
+                        </div>
+                    </div>
+                    <hr class="border-secondary opacity-10">
+
+                    <div class="mb-3 small">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Khởi hành:</span>
+                            <span class="fw-bold text-dark">[[${#temporals.format(schedule.startDate, 'dd/MM/yyyy')}]]</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Tập trung:</span>
+                            <span class="fw-bold text-dark text-end" style="max-width: 150px;">[[${schedule.tour.departurePoint}]]</span>
+                        </div>
+                    </div>
+                    <hr class="border-secondary opacity-10">
+
+                    <div id="price-breakdown" class="small mb-3">
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="fw-bold fs-5">TỔNG CỘNG</span>
+                        <span class="fw-bold fs-4 text-danger" id="total-amount">0 đ</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-center py-3 rounded-bottom-4">
+                    <small class="text-muted"><i class="fa-solid fa-shield-halved me-1 text-success"></i>Bảo mật thanh toán 100%</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7 col-lg-8">
+
+            <h5 class="fw-bold mb-3"><span class="badge bg-primary rounded-circle me-2">1</span>Số lượng hành khách</h5>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0">Người lớn</h6>
+                            <small class="text-muted">Từ 10 tuổi trở lên</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="text-primary fw-bold" th:data-price="${schedule.priceAdult}" id="price-adult-display"></span>
+                            <div class="input-group input-group-sm" style="width: 120px;">
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity('adult', -1)">-</button>
+                                <input type="number" id="adult-qty" class="form-control text-center fw-bold" value="1" min="1" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity('adult', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0">Trẻ em (5 - 9 tuổi)</h6>
+                            <small class="text-success fw-bold">Giảm 25%</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="text-muted small" th:data-price="${schedule.priceAdult * 0.75}" id="price-child-display"></span>
+                            <div class="input-group input-group-sm" style="width: 120px;">
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity('child', -1)">-</button>
+                                <input type="number" id="child-qty" class="form-control text-center fw-bold" value="0" min="0" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity('child', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="fw-bold mb-0">Em bé (< 5 tuổi)</h6>
+                            <small class="text-success fw-bold">Chỉ 10% vé</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="text-muted small" th:data-price="${schedule.priceAdult * 0.1}" id="price-infant-display"></span>
+                            <div class="input-group input-group-sm" style="width: 120px;">
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity('infant', -1)">-</button>
+                                <input type="number" id="infant-qty" class="form-control text-center fw-bold" value="0" min="0" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity('infant', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3"><span class="badge bg-primary rounded-circle me-2">2</span>Thông tin liên hệ</h5>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <form id="bookingForm" class="row g-3">
+                        <input type="hidden" name="scheduleId" th:value="${schedule.id}">
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Họ và tên *</label>
+                            <input type="text" class="form-control" name="fullName" th:value="${user != null ? user.fullName : ''}" required placeholder="VD: Nguyen Van A">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Số điện thoại *</label>
+                            <input type="tel" class="form-control" name="phone" th:value="${user != null ? user.phone : ''}" required placeholder="09xxxxxxx">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Email (Nhận vé điện tử) *</label>
+                            <input type="email" class="form-control" name="email" th:value="${user != null ? user.email : ''}" required placeholder="email@example.com">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Ghi chú đặc biệt</label>
+                            <textarea class="form-control" name="note" rows="2" placeholder="VD: Tôi ăn chay, cần ghế đầu xe..."></textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3"><span class="badge bg-primary rounded-circle me-2">3</span>Thanh toán</h5>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush rounded-3">
+
+                        <label class="list-group-item d-flex gap-3 align-items-center p-3 cursor-pointer">
+                            <input class="form-check-input flex-shrink-0" type="radio" name="paymentMethod" value="VNPAY" checked onchange="togglePaymentInfo()">
+                            <span class="d-flex align-items-center justify-content-between w-100">
+                                <span><i class="fa-solid fa-credit-card me-2 text-primary"></i>Thanh toán VNPAY / Thẻ ATM</span>
+                                <img src="https://vinadesign.vn/uploads/images/2023/05/vnpay-logo-vinadesign-25-12-57-55.png" height="25">
+                            </span>
+                        </label>
+
+                        <label class="list-group-item d-flex gap-3 align-items-center p-3 cursor-pointer">
+                            <input class="form-check-input flex-shrink-0" type="radio" name="paymentMethod" value="BANK_TRANSFER" onchange="togglePaymentInfo()">
+                            <span class="d-flex align-items-center justify-content-between w-100">
+                                <span><i class="fa-solid fa-qrcode me-2 text-success"></i>Chuyển khoản Ngân hàng (QR Code)</span>
+                                <i class="fa-solid fa-university text-muted"></i>
+                            </span>
+                        </label>
+
+                        <div id="bank-info" class="bg-light p-4 d-none border-top">
+                            <div class="row align-items-center">
+                                <div class="col-md-5 text-center">
+                                    <img id="qr-code-img" src="" class="img-fluid rounded border shadow-sm bg-white p-2" alt="QR Code">
+                                    <small class="d-block mt-2 text-muted fst-italic">Quét mã để thanh toán nhanh</small>
+                                </div>
+                                <div class="col-md-7">
+                                    <h6 class="fw-bold text-primary">Thông tin chuyển khoản</h6>
+                                    <ul class="list-unstyled small mb-0">
+                                        <li class="mb-2">Ngân hàng: <strong>MB Bank (Quân Đội)</strong></li>
+                                        <li class="mb-2">Số tài khoản: <strong class="text-danger fs-5">0366964556</strong></li>
+                                        <li class="mb-2">Chủ tài khoản: <strong>VU MINH NHAT</strong></li>
+                                        <li>Nội dung: <strong class="text-primary" id="transfer-content">BOOKTOUR [SDT]</strong></li>
+                                    </ul>
+                                    <div class="alert alert-warning small mt-3 mb-0">
+                                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Lưu ý: Sau khi chuyển khoản, vui lòng bấm nút "Hoàn tất đặt vé" bên dưới. Nhân viên sẽ gọi xác nhận trong 5 phút.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <label class="list-group-item d-flex gap-3 align-items-center p-3 cursor-pointer">
+                            <input class="form-check-input flex-shrink-0" type="radio" name="paymentMethod" value="CASH" onchange="togglePaymentInfo()">
+                            <span class="d-flex align-items-center justify-content-between w-100">
+                                <span><i class="fa-solid fa-money-bill-wave me-2 text-warning"></i>Tiền mặt tại văn phòng</span>
+                                <i class="fa-solid fa-shop text-muted"></i>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="submitBooking()" class="btn btn-primary w-100 btn-lg py-3 fw-bold text-uppercase shadow hover-up">
+                Hoàn tất đặt vé <i class="fa-solid fa-arrow-right ms-2"></i>
+            </button>
+            <p class="text-center text-muted small mt-3">Bằng việc bấm nút trên, bạn đồng ý với Điều khoản & Chính sách của chúng tôi.</p>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+
+<script th:inline="javascript">
+    // 1. LẤY GIÁ TỪ SERVER (THYMELEAF)
+    const basePrice = [[${schedule.priceAdult}]]; // Giá người lớn gốc
+    const childPrice = basePrice * 0.75;
+    const infantPrice = basePrice * 0.1;
+
+    let totalPrice = 0;
+
+    // 2. KHỞI TẠO KHI LOAD TRANG
+    document.addEventListener('DOMContentLoaded', function() {
+        formatCurrencyDisplay();
+        calculateTotal();
+    });
+
+    // 3. HÀM CẬP NHẬT SỐ LƯỢNG
+    function updateQuantity(type, change) {
+        const input = document.getElementById(type + '-qty');
+        let val = parseInt(input.value) + change;
+
+        // Validate: Người lớn min 1, còn lại min 0
+        const min = (type === 'adult') ? 1 : 0;
+        if (val < min) val = min;
+
+        input.value = val;
+        calculateTotal();
+    }
+
+    // 4. HÀM TÍNH TỔNG TIỀN VÀ RENDER VIEW
+    function calculateTotal() {
+        const adults = parseInt(document.getElementById('adult-qty').value);
+        const children = parseInt(document.getElementById('child-qty').value);
+        const infants = parseInt(document.getElementById('infant-qty').value);
+
+        totalPrice = (adults * basePrice) + (children * childPrice) + (infants * infantPrice);
+
+        // Update Tổng tiền
+        document.getElementById('total-amount').innerText = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice);
+
+        // Update Breakdown (Chi tiết bên cột phải)
+        let html = `<div class="d-flex justify-content-between mb-1">
+                        <span>Người lớn (${adults}x)</span>
+                        <span>${formatMoney(adults * basePrice)}</span>
+                    </div>`;
+
+        if (children > 0) {
+            html += `<div class="d-flex justify-content-between mb-1">
+                        <span>Trẻ em (${children}x)</span>
+                        <span>${formatMoney(children * childPrice)}</span>
+                    </div>`;
+        }
+        if (infants > 0) {
+            html += `<div class="d-flex justify-content-between mb-1">
+                        <span>Em bé (${infants}x)</span>
+                        <span>${formatMoney(infants * infantPrice)}</span>
+                    </div>`;
+        }
+
+        document.getElementById('price-breakdown').innerHTML = html;
+
+        // Cập nhật QR Code nếu đang chọn chuyển khoản
+        updateQRCode();
+    }
+
+    // 5. HÀM HIỂN THỊ THÔNG TIN THANH TOÁN
+    function togglePaymentInfo() {
+        const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+        const bankInfo = document.getElementById('bank-info');
+
+        if (method === 'BANK_TRANSFER') {
+            bankInfo.classList.remove('d-none');
+            updateQRCode();
+        } else {
+            bankInfo.classList.add('d-none');
+        }
+    }
+
+    // 6. CẬP NHẬT QR CODE (DÙNG API VIETQR)
+    function updateQRCode() {
+        // Cú pháp: https://img.vietqr.io/image/[BANK]-[ACC_NO]-[TEMPLATE].png?amount=[AMOUNT]&addInfo=[CONTENT]
+        const phone = document.querySelector('input[name="phone"]').value || 'KHACH';
+        const content = `BOOKTOUR ${phone}`;
+        document.getElementById('transfer-content').innerText = content;
+
+        const qrUrl = `https://img.vietqr.io/image/MB-0366964556-compact2.png?amount=${totalPrice}&addInfo=${content}`;
+        document.getElementById('qr-code-img').src = qrUrl;
+    }
+
+    // 7. SUBMIT FORM (ĐÃ SỬA LOGIC VNPAY)
+    async function submitBooking() {
+        // Lấy User ID từ Thymeleaf (nếu có)
+        let currentUserId = [[${user != null ? user.id : 'null'}]];
+
+        // Thu thập dữ liệu từ Form
+        const bookingData = {
+            scheduleId: document.querySelector('input[name="scheduleId"]').value,
+            userId: currentUserId,
+
+            // Thông tin liên hệ
+            customerName: document.querySelector('input[name="fullName"]').value,
+            customerEmail: document.querySelector('input[name="email"]').value,
+            customerPhone: document.querySelector('input[name="phone"]').value,
+            notes: document.querySelector('textarea[name="note"]').value,
+            paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
+
+            // Số lượng khách (Quan trọng để tính tiền)
+            adultCount: parseInt(document.getElementById('adult-qty').value),
+            childCount: parseInt(document.getElementById('child-qty').value),
+            infantCount: parseInt(document.getElementById('infant-qty').value),
+
+            // Danh sách hành khách chi tiết (Nếu sau này bạn làm form nhập chi tiết)
+            // Hiện tại để mảng rỗng, Backend sẽ tự lấy thông tin người đặt điền vào
+            passengers: []
+        };
+
+        // Validate cơ bản
+        if (!bookingData.customerName || !bookingData.customerPhone || !bookingData.customerEmail) {
+            alert("Vui lòng điền đầy đủ thông tin liên hệ!");
+            return;
+        }
+
+        // Hiệu ứng loading nút bấm
+        const btn = document.querySelector('button[onclick="submitBooking()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+        btn.disabled = true;
+
+        try {
+            // BƯỚC 1: TẠO ĐƠN HÀNG (BOOKING)
+            console.log("Đang tạo đơn hàng...", bookingData);
+            const bookingRes = await fetch('/api/v1/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingData)
+            });
+
+            const bookingResult = await bookingRes.json();
+
+            if (!bookingRes.ok) {
+                throw new Error(bookingResult.message || bookingResult.error || "Lỗi tạo đơn hàng");
+            }
+
+            console.log("Đơn hàng tạo thành công:", bookingResult);
+
+            // BƯỚC 2: XỬ LÝ THANH TOÁN
+            if (bookingData.paymentMethod === 'VNPAY') {
+                // Gọi tiếp API tạo URL thanh toán
+                console.log("Đang lấy link VNPAY...");
+                const paymentRes = await fetch('/api/v1/payment/create-vnpay-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bookingCode: bookingResult.bookingCode,
+                        amount: bookingResult.totalAmount // Lấy số tiền thực tế từ Server trả về
+                    })
+                });
+
+                const paymentResult = await paymentRes.json();
+
+                if (paymentRes.ok && paymentResult.paymentUrl) {
+                    // Chuyển hướng sang VNPAY
+                    window.location.href = paymentResult.paymentUrl;
+                } else {
+                    alert("Lỗi tạo cổng thanh toán: " + (paymentResult.message || "Không xác định"));
+                    // Nếu lỗi thanh toán nhưng đã tạo đơn, chuyển về lịch sử
+                    window.location.href = "/history";
+                }
+
+            } else {
+                // Tiền mặt hoặc Chuyển khoản -> Xong luôn
+                alert("🎉 Đặt vé thành công! Mã đơn: " + bookingResult.bookingCode + "\nChúng tôi sẽ liên hệ sớm nhất.");
+                window.location.href = "/history";
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert('❌ Có lỗi xảy ra: ' + error.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // Helper: Format tiền tệ
+    function formatMoney(amount) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    }
+
+    // Helper: Hiển thị giá ban đầu
+    function formatCurrencyDisplay() {
+        document.getElementById('price-adult-display').innerText = formatMoney(basePrice);
+        document.getElementById('price-child-display').innerText = formatMoney(childPrice);
+        document.getElementById('price-infant-display').innerText = formatMoney(infantPrice);
+    }
+</script>
+
+</body>
+</html>

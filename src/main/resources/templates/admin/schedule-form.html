@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Lên lịch khởi hành')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container mt-5" style="max-width: 800px;">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-calendar-check"></i> Lên lịch khởi hành mới</h4>
+                </div>
+                <div class="card-body">
+
+                    <form th:action="@{/admin/schedules/save}" th:object="${schedule}" method="post">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Chọn Tour áp dụng:</label>
+                            <select name="tour" class="form-select" required>
+                                <option value="">-- Vui lòng chọn Tour --</option>
+
+                                <option th:each="t : ${tours}"
+                                        th:value="${t.id}"
+                                        th:text="${t.code + ' - ' + t.name}"
+                                        th:selected="${schedule.tour != null and t.id == schedule.tour.id}">
+                                </option>
+                            </select>
+                            <small class="text-muted">Lịch này áp dụng cho Tour nào?</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Ngày đi:</label>
+                                <input type="date" th:field="*{startDate}" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Ngày về:</label>
+                                <input type="date" th:field="*{endDate}" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold text-success">Giá Người lớn:</label>
+                                <input type="number" th:field="*{priceAdult}" class="form-control" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold text-primary">Giá Trẻ em:</label>
+                                <input type="number" th:field="*{priceChild}" class="form-control" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold text-danger">Số chỗ (Quota):</label>
+                                <input type="number" th:field="*{quota}" class="form-control" placeholder="VD: 20" required>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a href="/admin/schedules" class="btn btn-secondary">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary">Lưu lịch trình</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

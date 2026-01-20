@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Quản lý Lịch khởi hành')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="m-0">🗓 Danh sách Lịch khởi hành</h2>
+                <a href="/admin/tours" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Thêm lịch mới từ Tour
+                </a>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên Tour (Sản phẩm)</th>
+                            <th>Ngày Đi - Về</th>
+                            <th>Giá Người lớn</th>
+                            <th>Giá Trẻ em</th> <th>Chỗ (Book/Tổng)</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="s : ${schedules}">
+                            <td th:text="${s.id}"></td>
+                            <td>
+            <span class="fw-bold text-primary"
+                  th:text="${s.tour != null ? s.tour.name : '⚠️ Mất kết nối Tour'}">
+            </span>
+                            </td>
+                            <td>
+                                <div th:text="${#temporals.format(s.startDate, 'dd/MM/yyyy')}"></div>
+                                <small class="text-muted" th:text="${#temporals.format(s.endDate, 'dd/MM/yyyy')}"></small>
+                            </td>
+
+                            <td class="fw-bold text-success"
+                                th:text="${#numbers.formatDecimal(s.priceAdult, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                            </td>
+
+                            <td class="fw-bold text-info"
+                                th:text="${#numbers.formatDecimal(s.priceChild, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                            </td>
+
+                            <td>
+            <span class="badge bg-secondary">
+                [[${s.booked}]] / [[${s.quota}]]
+            </span>
+                            </td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div th:if="${schedules == null || schedules.empty}" class="alert alert-warning mt-3 text-center">
+                Chưa có lịch khởi hành nào được tạo.
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

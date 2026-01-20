@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Chính sách & Điều khoản')}"></head>
+<body>
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="container py-5">
+    <h1 class="fw-bold mb-4">Chính sách & Điều khoản</h1>
+    <div class="bg-white p-5 rounded shadow-sm">
+        <h4>1. Chính sách bảo mật</h4>
+        <p>Smart Travel cam kết bảo mật thông tin cá nhân của khách hàng...</p>
+
+        <h4>2. Điều kiện hoàn hủy</h4>
+        <p>Hủy trước 7 ngày: Hoàn 100%...</p>
+    </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+</body>
+</html>

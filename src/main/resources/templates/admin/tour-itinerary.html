@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Lịch trình Tour')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <a href="/admin/tours" class="text-decoration-none text-muted"><i class="bi bi-arrow-left"></i> Quay lại</a>
+                <h3 class="text-primary">📋 Lịch trình: <span th:text="${tour.name}"></span></h3>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white fw-bold">Thêm ngày mới</div>
+                        <div class="card-body">
+                            <form action="/admin/tours/itinerary/save" method="post" th:object="${newItinerary}">
+                                <input type="hidden" name="tourId" th:value="${tour.id}">
+                                <div class="mb-3">
+                                    <label class="form-label">Ngày thứ (VD: 1)</label>
+                                    <input type="number" th:field="*{dayNumber}" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Tiêu đề (VD: Hà Nội - Sapa)</label>
+                                    <input type="text" th:field="*{title}" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nội dung chi tiết</label>
+                                    <textarea th:field="*{description}" class="form-control" rows="5"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">Thêm vào lịch trình</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-0">
+                            <table class="table table-striped mb-0">
+                                <thead class="table-dark">
+                                <tr>
+                                    <th>Ngày</th>
+                                    <th>Hoạt động</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="i : ${itineraries}">
+                                    <td class="fw-bold text-center align-middle" style="width: 80px;">
+                                        Ngày [[${i.dayNumber}]]
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-primary">[[${i.title}]]</div>
+                                        <div class="text-muted small">[[${i.description}]]</div>
+                                    </td>
+                                    <td class="align-middle">
+                                        <a th:href="@{'/admin/tours/itinerary/delete/' + ${i.id}}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa ngày này?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                            <div th:if="${itineraries.empty}" class="p-3 text-center text-muted">Chưa có lịch trình.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

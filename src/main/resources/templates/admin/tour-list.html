@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Quản lý Tour')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="text-primary"><i class="bi bi-map"></i> Quản lý Tour Du Lịch</h3>
+                <a href="/admin/tours/add" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Thêm Tour Mới
+                </a>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Mã Tour</th>
+                            <th style="width: 30%">Tên Tour</th>
+                            <th>Điểm đến</th>
+                            <th>Giá & Lịch</th>
+                            <th>Cấu hình</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="t : ${tours}">
+                            <td th:text="${t.id}"></td>
+                            <td><span class="badge bg-secondary" th:text="${t.code}"></span></td>
+                            <td class="fw-bold text-primary" th:text="${t.name}"></td>
+                            <td th:text="${t.destination != null ? t.destination.name : '-'}"></td>
+
+                            <td>
+                                <a th:href="@{'/admin/schedules?tourId=' + ${t.id}}"
+                                   class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-calendar-check"></i> Lịch & Giá
+                                </a>
+                            </td>
+
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a th:href="@{'/admin/tours/itinerary/' + ${t.id}}"
+                                       class="btn btn-sm btn-outline-info" title="Lịch trình chi tiết">
+                                        <i class="bi bi-list-ol"></i> Lịch trình
+                                    </a>
+
+                                    <a th:href="@{'/admin/tours/images/' + ${t.id}}"
+                                       class="btn btn-sm btn-outline-secondary" title="Thư viện ảnh">
+                                        <i class="bi bi-images"></i> Ảnh
+                                    </a>
+                                </div>
+                            </td>
+
+                            <td>
+                                <a th:href="@{'/admin/schedules/add?tourId=' + ${t.id}}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-calendar-plus"></i> Thêm lịch khởi hành
+                                </a>
+                                <a th:href="@{'/admin/tours/edit/' + ${t.id}}" class="btn btn-sm btn-warning text-white">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a th:href="@{'/admin/tours/delete/' + ${t.id}}"
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Bạn có chắc chắn muốn xóa Tour này?');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(tours)}" class="alert alert-warning mt-3 text-center">
+                Chưa có Tour nào trong hệ thống.
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

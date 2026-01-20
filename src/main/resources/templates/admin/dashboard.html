@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head th:replace="~{admin/fragments :: head('Dashboard Quản trị')}"></head>
+
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <h2 class="mb-4 text-primary fw-bold"><i class="bi bi-speedometer2"></i> Tổng quan hệ thống</h2>
+
+            <div class="row g-3 mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-success text-white shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-white-50">DOANH THU THỰC TẾ</div>
+                                    <div class="fs-3 fw-bold" th:text="${#numbers.formatDecimal(revenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</div>
+                                </div>
+                                <i class="bi bi-currency-dollar fs-1 text-white-50"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between small">
+                            <a class="text-white stretched-link text-decoration-none" href="/admin/report">Xem chi tiết</a>
+                            <i class="bi bi-chevron-right text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-warning text-dark shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small fw-bold text-muted text-uppercase">Đơn mới hôm nay</div>
+
+                                    <div class="fs-3 fw-bold">
+                                        <span th:text="${newBookingsToday}">0</span>
+                                        <span class="fs-6 text-muted ms-1" style="font-weight: normal;">đơn</span>
+                                    </div>
+
+                                    <div class="small mt-1 text-danger fw-bold">
+                                        <i class="bi bi-exclamation-circle"></i> [[${pendingOrders}]] đang chờ xử lý
+                                    </div>
+                                </div>
+                                <i class="bi bi-lightning-charge-fill fs-1 text-muted opacity-50"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between small">
+                            <a class="text-dark stretched-link text-decoration-none" href="/admin/bookings">Xử lý ngay</a>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-primary text-white shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-white-50">SẢN PHẨM TOUR</div>
+                                    <div class="fs-3 fw-bold" th:text="${totalTours}">0</div>
+                                </div>
+                                <i class="bi bi-map fs-1 text-white-50"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between small">
+                            <a class="text-white stretched-link text-decoration-none" href="/admin/tours">Quản lý Tour</a>
+                            <i class="bi bi-chevron-right text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-info text-white shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-white-50">KHÁCH HÀNG</div>
+                                    <div class="fs-3 fw-bold" th:text="${totalCustomers}">0</div>
+                                </div>
+                                <i class="bi bi-people fs-1 text-white-50"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between small">
+                            <a class="text-white stretched-link text-decoration-none" href="/admin/users">Xem danh sách</a>
+                            <i class="bi bi-chevron-right text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6" sec:authorize="hasAuthority('ROLE_ADMIN')">
+                    <div class="card bg-secondary text-white shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="small text-white-50">NHÂN SỰ (STAFF)</div>
+                                    <div class="fs-3 fw-bold" th:text="${totalStaffs}">0</div>
+                                </div>
+                                <i class="bi bi-person-badge fs-1 text-white-50"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between small">
+                            <a class="text-white stretched-link text-decoration-none" href="/admin/users?role=STAFF">Quản lý nội bộ</a>
+                            <i class="bi bi-chevron-right text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white fw-bold py-3">
+                            <i class="bi bi-airplane me-1"></i> Các chuyến sắp khởi hành
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Tour</th>
+                                    <th>Ngày đi</th>
+                                    <th>Lấp đầy</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="s : ${upcomingSchedules}">
+                                    <td>
+                                            <span class="d-block text-truncate" style="max-width: 200px;"
+                                                  th:text="${s.tour != null ? s.tour.name : 'Unknown'}"></span>
+                                    </td>
+                                    <td th:text="${#temporals.format(s.startDate, 'dd/MM')}"></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                <div class="progress-bar" role="progressbar"
+                                                     th:classappend="${(s.booked * 100 / s.quota) > 80 ? 'bg-danger' : 'bg-success'}"
+                                                     th:style="'width: ' + (${s.booked} * 100.0 / ${s.quota}) + '%'">
+                                                </div>
+                                            </div>
+                                            <small>[[${s.booked}]]/[[${s.quota}]]</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white fw-bold py-3">
+                            <i class="bi bi-bar-chart-line me-1"></i> Biểu đồ tăng trưởng
+                        </div>
+                        <div class="card-body">
+                            <canvas id="myAreaChart" width="100%" height="40"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-receipt me-1"></i> Đơn đặt Tour mới nhất
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Mã BK</th>
+                            <th>Khách hàng</th>
+                            <th>Tour đăng ký</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="b : ${recentBookings}">
+                            <td class="fw-bold text-primary" th:text="${b.bookingCode}"></td>
+                            <td th:text="${b.user != null ? b.user.fullName : 'Khách lẻ'}"></td>
+                            <td th:text="${b.schedule.tour.name}"></td>
+                            <td th:text="${#numbers.formatDecimal(b.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            <td>
+                                <span th:if="${b.status == 'PENDING'}" class="badge bg-warning text-dark">Chờ TT</span>
+                                <span th:if="${b.status == 'PAID_FULL'}" class="badge bg-success">Đã TT</span>
+                                <span th:if="${b.status == 'CANCELLED'}" class="badge bg-danger">Hủy</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-white text-center py-3">
+                    <a href="/admin/bookings" class="text-decoration-none">Xem tất cả đơn hàng <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{admin/fragments :: scripts}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:inline="javascript"> // Quan trọng: thêm th:inline="javascript"
+var ctx = document.getElementById("myAreaChart");
+
+// Lấy dữ liệu từ Controller (Thymeleaf sẽ tự điền vào đây)
+var myLabels = [[${chartLabels}]]; // VD: ["T8", "T9", "T10", ...]
+var myData = [[${chartData}]];     // VD: [0, 5000000, 12000000, ...]
+
+var myLineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: myLabels, // Thay số cứng bằng biến myLabels
+        datasets: [{
+            label: "Doanh thu",
+            lineTension: 0.3,
+            backgroundColor: "rgba(2,117,216,0.2)",
+            borderColor: "rgba(2,117,216,1)",
+            pointRadius: 5,
+            pointBackgroundColor: "rgba(2,117,216,1)",
+            pointBorderColor: "rgba(255,255,255,0.8)",
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(2,117,216,1)",
+            hitRadius: 50,
+            pointBorderWidth: 2,
+            data: myData, // Thay số cứng bằng biến myData
+        }],
+    },
+    options: {
+        scales: {
+            xAxes: [{
+                time: { unit: 'date' },
+                gridLines: { display: false },
+                ticks: { maxTicksLimit: 7 }
+            }],
+            yAxes: [{
+                ticks: {
+                    min: 0,
+                    maxTicksLimit: 5,
+                    // Format tiền tệ cho trục Y (thêm 'đ')
+                    callback: function(value, index, values) {
+                        return value.toLocaleString('vi-VN') + ' đ';
+                    }
+                },
+                gridLines: { color: "rgba(0, 0, 0, .125)" }
+            }],
+        },
+        legend: { display: false },
+        tooltips: {
+            // Format tiền tệ khi di chuột vào (Tooltip)
+            callbacks: {
+                label: function(tooltipItem, chart) {
+                    var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
+                    return datasetLabel + ': ' + tooltipItem.yLabel.toLocaleString('vi-VN') + ' đ';
+                }
+            }
+        }
+    }
+});
+</script>
+</body>
+</html>

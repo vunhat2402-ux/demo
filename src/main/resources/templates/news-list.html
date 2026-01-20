@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Tin tức du lịch')}"></head>
+<body>
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="bg-light py-5 mb-5 text-center">
+    <h1 class="fw-bold">CẨM NANG DU LỊCH</h1>
+    <p class="lead text-muted">Những kinh nghiệm, mẹo vặt và tin tức mới nhất</p>
+</div>
+
+<div class="container mb-5">
+    <div class="row g-4">
+        <div class="col-md-4" th:each="item : ${newsList}">
+            <div class="card h-100 border-0 shadow-sm hover-up">
+                <a th:href="@{/news/{id}(id=${item.id})}">
+                    <img th:src="${item.image}" class="card-img-top" style="height: 220px; object-fit: cover;">
+                </a>
+                <div class="card-body">
+                    <div class="text-muted small mb-2">
+                        <i class="fa-regular fa-calendar me-1"></i>
+                        <span th:text="${item.createdDate != null ? #temporals.format(item.createdDate, 'dd/MM/yyyy') : 'Mới'}"></span>
+                    </div>
+                    <h5 class="card-title fw-bold">
+                        <a th:href="@{/news/{id}(id=${item.id})}" class="text-decoration-none text-dark" th:text="${item.title}">Title</a>
+                    </h5>
+                    <p class="card-text text-muted small text-truncate-3" th:text="${item.shortDescription}">Desc...</p>
+                </div>
+                <div class="card-footer bg-white border-0 pb-3">
+                    <a th:href="@{/news/{id}(id=${item.id})}" class="text-primary fw-bold text-decoration-none small">
+                        ĐỌC TIẾP <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+</body>
+</html>

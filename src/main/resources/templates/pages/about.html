@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Về chúng tôi')}"></head>
+<body>
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="container py-5 text-center">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <h1 class="fw-bold mb-4 text-primary">VỀ SMART TRAVEL</h1>
+      <p class="lead text-muted mb-5">
+        Chúng tôi là đơn vị tiên phong ứng dụng công nghệ AI vào du lịch, giúp bạn lên kế hoạch cho những chuyến đi hoàn hảo nhất.
+      </p>
+      <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1000" class="img-fluid rounded-3 shadow mb-5">
+
+      <div class="text-start">
+        <h4>Sứ mệnh</h4>
+        <p>Mang đến trải nghiệm du lịch thông minh, tiện lợi và tiết kiệm cho người Việt.</p>
+
+        <h4>Tầm nhìn 2030</h4>
+        <p>Trở thành nền tảng đặt tour trực tuyến số 1 Đông Nam Á.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+</body>
+</html>

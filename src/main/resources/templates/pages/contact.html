@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Liên hệ')}"></head>
+<body>
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="container py-5">
+  <h2 class="fw-bold text-center mb-5 text-uppercase">Liên hệ với chúng tôi</h2>
+
+  <div th:if="${param.success}" class="alert alert-success text-center mb-4">
+    <i class="fa-solid fa-check-circle me-2"></i> Cảm ơn bạn! Chúng tôi đã nhận được tin nhắn và sẽ phản hồi sớm nhất.
+  </div>
+
+  <div class="row g-5">
+    <div class="col-md-6">
+      <h4 class="mb-3 fw-bold">Thông tin trụ sở</h4>
+      <ul class="list-unstyled mb-4">
+        <li class="mb-3"><i class="fa-solid fa-location-dot me-3 text-primary"></i> 227 Nguyễn Văn Cừ, Quận 5, TP.HCM</li>
+        <li class="mb-3"><i class="fa-solid fa-phone me-3 text-primary"></i> 1900 1234</li>
+        <li class="mb-3"><i class="fa-solid fa-envelope me-3 text-primary"></i> contact@smarttravel.com</li>
+      </ul>
+
+      <div class="rounded-3 overflow-hidden shadow-sm border">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.630773293551!2d106.67998301474876!3d10.762913992330719!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f1c06f4e1dd%3A0x43900f1d4539a3d!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBLaG9hIGjhu41jIFThu7Egbmhpw6puIC0gxJDhuqFpIGjhu41jIFF14buRYyBnaWEgVFAuSGNt!5e0!3m2!1svi!2s!4v1646732342342!5m2!1svi!2s"
+                width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm p-4">
+        <form th:action="@{/contact/send}" method="post" th:object="${contact}">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Họ tên</label>
+            <input type="text" field="*{fullName}" name="fullName" class="form-control" required placeholder="Nguyễn Văn A">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Email</label>
+            <input type="email" field="*{email}" name="email" class="form-control" required placeholder="email@example.com">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Nội dung cần hỗ trợ</label>
+            <textarea field="*{message}" name="message" class="form-control" rows="5" required placeholder="Tôi cần tư vấn về tour..."></textarea>
+          </div>
+          <button class="btn btn-primary w-100 py-2 fw-bold">Gửi tin nhắn <i class="fa-solid fa-paper-plane ms-2"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head(~{::title})}">
+  <title>Quản lý Đơn hàng</title>
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+  <div th:replace="~{admin/fragments :: sidebar}"></div>
+  <div id="page-content-wrapper">
+    <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+    <div class="container-fluid px-4 mt-4">
+      <h2 class="mb-4">📝 Đơn đặt Tour</h2>
+      <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h5 class="mb-0 text-primary fw-bold"><i class="bi bi-list-check"></i> Danh sách đơn hàng</h5>
+            </div>
+            <div class="col-md-6">
+              <form action="/admin/bookings" method="get" class="d-flex justify-content-end">
+                <div class="input-group" style="max-width: 300px;">
+                  <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                  <input type="text" name="search" class="form-control"
+                         placeholder="Nhập mã đơn (VD: BK-TEST...)"
+                         th:value="${searchCode}"> <button type="submit" class="btn btn-primary">Tìm</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-0">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+            <tr>
+              <th>Mã đơn</th>
+              <th>Khách đặt</th>
+              <th>Thông tin Tour</th>
+              <th>Tổng tiền / TT</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(bookings)}">
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                Không tìm thấy đơn hàng nào khớp với yêu cầu.
+              </td>
+            </tr>
+
+            <tr th:each="b : ${bookings}">
+              <td><span class="badge bg-secondary" th:text="${b.bookingCode}"></span></td>
+              <td>
+                <div class="fw-bold" th:text="${b.user != null ? b.user.fullName : 'Khách vãng lai'}"></div>
+                <small class="text-muted" th:text="${b.user != null ? b.user.phone : ''}"></small>
+              </td>
+              <td>
+                <div class="fw-bold text-primary" th:text="${b.schedule.tour.name}"></div>
+                <small class="text-muted">
+                  Khởi hành: <span th:text="${#temporals.format(b.schedule.startDate, 'dd/MM/yyyy')}"></span>
+                </small>
+                <br>
+                <small>
+                  <i class="bi bi-people-fill"></i> <span th:text="${b.passengers.size()}"></span> khách
+                </small>
+              </td>
+              <td>
+                <div class="fw-bold text-danger" th:text="${#numbers.formatDecimal(b.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></div>
+                <small class="badge bg-light text-dark border" th:text="${b.paymentMethod}"></small>
+              </td>
+              <td>
+                <span th:if="${b.status == 'PENDING'}" class="badge bg-warning text-dark">Chờ TT</span>
+                <span th:if="${b.status == 'PAID_FULL'}" class="badge bg-success">Đã thanh toán</span>
+                <span th:if="${b.status == 'DEPOSITED'}" class="badge bg-info">Đã cọc</span>
+                <span th:if="${b.status == 'CANCELLED'}" class="badge bg-danger">Hủy</span>
+              </td>
+              <td>
+                <a th:href="@{'/admin/bookings/detail/' + ${b.id}}" class="btn btn-sm btn-info text-white">
+                  <i class="bi bi-eye"></i> Chi tiết
+                </a>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

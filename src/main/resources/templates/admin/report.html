@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head(~{::title})}">
+    <title>Báo cáo Doanh thu</title>
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>📈 Báo cáo Doanh thu</h2>
+                <button onclick="window.print()" class="btn btn-outline-primary">
+                    <i class="bi bi-printer"></i> In Báo cáo
+                </button>
+            </div>
+
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Tổng thực thu (Đã thanh toán)</h5>
+                        <h2 th:text="${#numbers.formatCurrency(totalRevenue)}">0 đ</h2>
+                    </div>
+                    <i class="bi bi-cash-coin fs-1"></i>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold">
+                    <i class="bi bi-table me-1"></i> Danh sách giao dịch thành công
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Tour</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="b : ${bookings}">
+                            <td th:text="${b.bookingCode}"></td>
+                            <td>
+                                <span th:text="${b.user != null ? b.user.fullName : 'Khách vãng lai'}"></span><br/>
+                                <small class="text-muted" th:text="${b.user != null ? b.user.phone : ''}"></small>
+                            </td>
+                            <td>
+                                <span th:text="${b.schedule.tour.name}"></span><br/>
+                                <small class="text-muted">
+                                    Khởi hành: <span th:text="${#temporals.format(b.schedule.startDate, 'dd/MM/yyyy')}"></span>
+                                </small>
+                            </td>
+                            <td th:text="${#temporals.format(b.bookingDate, 'dd/MM/yyyy HH:mm')}"></td>
+
+                            <td class="fw-bold text-end text-success"
+                                th:text="${#numbers.formatCurrency(b.totalAmount)}">
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

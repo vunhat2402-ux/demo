@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Quản lý Khuyến mãi')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <h2 class="mb-4 text-primary"><i class="bi bi-ticket-perforated-fill"></i> Quản lý Voucher</h2>
+
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i> <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-4 col-md-12 mb-4">
+                    <div class="card shadow-sm border-0 border-top border-4 border-primary">
+                        <div class="card-header bg-white fw-bold">
+                            <i class="bi bi-plus-circle"></i> Tạo Mã Giảm Giá Mới
+                        </div>
+                        <div class="card-body">
+                            <form action="/admin/vouchers/create" method="post" th:object="${newVoucher}">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Mã Code (Viết liền, in hoa)</label>
+                                    <input type="text" th:field="*{code}" class="form-control text-uppercase" placeholder="VD: HE2025" required>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Giá trị giảm</label>
+                                        <input type="number" th:field="*{discountValue}" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Loại giảm</label>
+                                        <select th:field="*{isPercent}" class="form-select">
+                                            <option value="false">Tiền mặt (VNĐ)</option>
+                                            <option value="true">Phần trăm (%)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Số lượng</label>
+                                        <input type="number" th:field="*{quantity}" class="form-control" value="100" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Hạn sử dụng</label>
+                                        <input type="date" th:field="*{expiryDate}" class="form-control" required>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu Voucher</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-8 col-md-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white fw-bold">
+                            <i class="bi bi-list-ul"></i> Danh sách Mã giảm giá hiện có
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover table-striped mb-0 align-middle">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Mã Code</th>
+                                    <th>Mức giảm</th>
+                                    <th>Số lượng</th>
+                                    <th>Hạn dùng</th>
+                                    <th>Trạng thái</th> <th>Thao tác</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="v : ${vouchers}">
+                                    <td class="fw-bold text-primary" th:text="${v.code}"></td>
+
+                                    <td>
+                                        <span th:if="${v.isPercent}" class="badge bg-info text-dark">Giảm [[${v.discountValue}]]%</span>
+                                        <span th:unless="${v.isPercent}" class="badge bg-success">Giảm [[${#numbers.formatDecimal(v.discountValue, 0, 'COMMA', 0, 'POINT')}]] đ</span>
+                                    </td>
+
+                                    <td th:text="${v.quantity}"></td>
+
+                                    <td th:text="${#temporals.format(v.expiryDate, 'dd/MM/yyyy')}"></td>
+
+                                    <td>
+                <span th:if="${v.expiryDate.isBefore(today)}" class="badge bg-secondary">
+                    <i class="bi bi-x-circle"></i> Đã hết hạn
+                </span>
+
+                                        <span th:unless="${v.expiryDate.isBefore(today)}" class="badge bg-success">
+                    <i class="bi bi-check-circle"></i> Đang hoạt động
+                </span>
+                                    </td>
+
+                                    <td>
+                                        <a th:href="@{'/admin/vouchers/delete/' + ${v.id}}"
+                                           class="btn btn-sm btn-danger"
+                                           onclick="return confirm('Xóa mã này?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+
+                                <tr th:if="${#lists.isEmpty(vouchers)}">
+                                    <td colspan="6" class="text-center text-muted py-4">Chưa có mã giảm giá nào.</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>

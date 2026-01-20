@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head(${news.title})}"></head>
+<body>
+<nav th:replace="~{client-layout :: navbar}"></nav>
+
+<div class="container py-5">
+  <div class="row">
+    <div class="col-lg-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
+          <li class="breadcrumb-item"><a href="/news">Tin tức</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Chi tiết</li>
+        </ol>
+      </nav>
+
+      <h1 class="fw-bold mb-3" th:text="${news.title}">Tiêu đề bài viết</h1>
+      <div class="text-muted mb-4 small">
+        <i class="fa-regular fa-calendar me-1"></i> <span th:text="${news.createdDate != null ? #temporals.format(news.createdDate, 'dd/MM/yyyy') : 'Mới cập nhật'}"></span>
+        <span class="mx-2">|</span>
+        <i class="fa-solid fa-user me-1"></i> Admin
+      </div>
+
+      <img th:src="${news.image}" class="w-100 rounded-3 mb-4 shadow-sm" style="max-height: 400px; object-fit: cover;">
+
+      <div class="content fs-5 text-justify" style="line-height: 1.8;" th:utext="${news.content}">
+        Nội dung bài viết...
+      </div>
+    </div>
+
+    <div class="col-lg-4 mt-5 mt-lg-0">
+      <div class="sticky-top" style="top: 100px;">
+        <h5 class="fw-bold border-start border-4 border-primary ps-3 mb-4">Bài viết khác</h5>
+        <div class="list-group list-group-flush">
+          <a th:each="item : ${otherNews}" th:if="${item.id != news.id}"
+             th:href="@{/news/{id}(id=${item.id})}"
+             class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-0">
+            <img th:src="${item.image}" class="rounded" width="80" height="60" style="object-fit: cover;">
+            <div>
+              <h6 class="mb-1 fw-bold small text-truncate-2" th:text="${item.title}">Title</h6>
+              <small class="text-muted" th:text="${item.createdDate != null ? #temporals.format(item.createdDate, 'dd/MM/yyyy') : ''}"></small>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+</body>
+</html>

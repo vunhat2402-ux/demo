@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Hồ sơ Khách hàng')}"></head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <div id="page-content-wrapper">
+        <div th:replace="~{admin/fragments :: top-nav}"></div>
+
+        <div class="container-fluid px-4 mt-4">
+            <a href="/admin/users" class="text-decoration-none text-muted"><i class="bi bi-arrow-left"></i> Quay lại</a>
+
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="card shadow-sm text-center p-3">
+                        <div class="card-body">
+                            <i class="bi bi-person-circle display-1 text-secondary"></i>
+                            <h4 class="mt-3" th:text="${user.fullName}"></h4>
+                            <p class="text-muted" th:text="${user.email}"></p>
+                            <hr>
+                            <div class="text-start">
+                                <p><strong>SĐT:</strong> <span th:text="${user.phone}"></span></p>
+                                <p><strong>ID:</strong> <span th:text="${user.id}"></span></p>
+                                <p><strong>Trạng thái:</strong>
+                                    <span th:if="${!user.locked}" class="text-success fw-bold">Hoạt động</span>
+                                    <span th:if="${user.locked}" class="text-danger fw-bold">Đã khóa</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white fw-bold">Lịch sử đặt Tour</div>
+                        <div class="card-body p-0">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Mã đơn</th>
+                                    <th>Tour</th>
+                                    <th>Ngày đặt</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="b : ${history}">
+                                    <td><a th:href="@{'/admin/bookings/detail/' + ${b.id}}" th:text="${b.bookingCode}"></a></td>
+                                    <td th:text="${b.schedule.tour.name}"></td>
+                                    <td th:text="${#temporals.format(b.bookingDate, 'dd/MM/yyyy')}"></td>
+                                    <td th:text="${#numbers.formatDecimal(b.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                                    <td>
+                                        <span th:classappend="${b.status == 'PAID_FULL' ? 'badge bg-success' : 'badge bg-warning'}" th:text="${b.status}"></span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                            <div th:if="${history.empty}" class="p-3 text-center text-muted">Khách này chưa đặt đơn nào.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{admin/fragments :: scripts}"></div>
+</body>
+</html>
