@@ -1,0 +1,14 @@
+### Test tạo Booking (POST)
+POST http://localhost:8080/api/v1/bookings
+Content-Type: application/json
+
+{
+  "scheduleId": 1,
+  "adultCount": 1,
+  "childCount": 0,
+  "customerName": "Test User InteliJ",
+  "customerEmail": "test@gmail.com",
+  "customerPhone": "0901234567",
+  "paymentMethod": "VNPAY",
+  "notes": "Test từ IntelliJ HTTP Client"
+}
