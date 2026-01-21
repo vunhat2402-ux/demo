@@ -15,4 +15,6 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     // Tìm tất cả giao dịch của một Booking cụ thể
     // (Để tính xem khách đã trả đủ tiền chưa: Cọc + Thanh toán nốt)
     Iterable<PaymentTransaction> findByBookingId(Integer bookingId);
+
+    boolean existsByTxnRef(String txnRefToCheck);
 }

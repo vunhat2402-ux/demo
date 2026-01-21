@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // Import quan trọng cho matcher
 
 @Configuration
 @EnableWebSecurity
@@ -43,34 +44,42 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/admin/login?logout")
                         .permitAll()
                 )
-                .csrf(csrf -> csrf.disable());
+                .csrf(csrf -> csrf.disable()); // Admin nội bộ có thể tắt hoặc bật tùy nhu cầu
 
         return http.build();
     }
 
     // ======================================================
-    // 2. CẤU HÌNH CHO KHÁCH (Chạy sau - Order 2)
+    // 2. CẤU HÌNH CHO KHÁCH & API (Chạy sau - Order 2)
     // ======================================================
     @Bean
     @Order(2)
     public SecurityFilterChain userFilterChain(HttpSecurity http) throws Exception {
         http
+                // 1. CẤU HÌNH CSRF: Chỉ tắt cho API để test POST dễ dàng
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(new AntPathRequestMatcher("/api/**"))
+                        .ignoringRequestMatchers(new AntPathRequestMatcher("/booking/create")) // Nếu booking dùng fetch/ajax
+                )
+
+                // 2. PHÂN QUYỀN (AUTHORIZATION)
                 .authorizeHttpRequests(auth -> auth
-                        // 1. TÀI NGUYÊN TĨNH & TRANG CHỦ, LOGIN, REGISTER
-                        .requestMatchers("/", "/login", "/register", "/tour/**", "/tours/**", "/api/**", "/css/**", "/js/**", "/images/**", "/uploads/**", "/ai/**").permitAll()
+                        // Tài nguyên tĩnh
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/ai/**").permitAll()
 
-                        // 2. MỞ KHÓA CHO KHÁCH VÃNG LAI (Tin tức, Liên hệ, Chính sách)
-                        .requestMatchers("/news/**").permitAll()
-                        .requestMatchers("/contact/**").permitAll()
-                        .requestMatchers("/about", "/policy").permitAll()
+                        // Các trang công khai
+                        .requestMatchers("/", "/login", "/register", "/tour/**", "/tours/**").permitAll()
+                        .requestMatchers("/news/**", "/contact/**", "/about", "/policy").permitAll()
 
-                        // 3. BOOKING & API
+                        // API & Booking (QUAN TRỌNG: Phải permitAll để không bị redirect về login)
+                        .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/booking/create").permitAll()
-                        .requestMatchers("/api/v1/bookings").permitAll()
 
-                        // 4. CÁC TRANG CÒN LẠI PHẢI ĐĂNG NHẬP (Profile, History...)
+                        // Còn lại bắt buộc đăng nhập
                         .anyRequest().authenticated()
                 )
+
+                // 3. LOGIN FORM
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
@@ -78,12 +87,13 @@ public class SecurityConfig {
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )
+
+                // 4. LOGOUT
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
-                )
-                .csrf(csrf -> csrf.disable());
+                );
 
         return http.build();
     }

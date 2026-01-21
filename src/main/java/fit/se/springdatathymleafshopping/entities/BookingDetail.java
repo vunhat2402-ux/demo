@@ -1,32 +1,33 @@
 package fit.se.springdatathymleafshopping.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
+import lombok.*;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "booking_details")
-@Data
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BookingDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Integer id;
 
-    // Logic vé: Tách biệt người lớn và trẻ em
-    private Integer adults;
-    private Integer children;
-    private Double price; // Giá chốt tại thời điểm đặt
+    private Integer adults = 0;
+    private Integer children = 0;
 
-    @ManyToOne
+    @Column(precision = 15, scale = 2)
+    private BigDecimal price = BigDecimal.ZERO; // Giá chốt tại thời điểm đặt
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
-    @ToString.Exclude
-    @JsonIgnore
     private Booking booking;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tour_id")
-    @ToString.Exclude
-    @JsonIgnore
     private Tour tour;
 }

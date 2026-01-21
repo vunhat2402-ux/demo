@@ -76,7 +76,7 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
                         <li><a class="dropdown-item py-2" th:href="@{/profile}"><i class="fa-solid fa-user-gear me-2 text-primary"></i>Thông tin cá nhân</a></li>
-                        <li><a class="dropdown-item py-2" th:href="@{/history}"><i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>Lịch sử đặt vé</a></li>
+                        <li><a class="dropdown-item py-2" th:href="@{/booking/history}"><i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>Lịch sử đặt vé</a></li>
 
                         <li sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')">
                             <hr class="dropdown-divider">

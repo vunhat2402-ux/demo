@@ -1,16 +1,17 @@
 package fit.se.springdatathymleafshopping.dtos;
 
-import lombok.AllArgsConstructor; // 👈 Thêm dòng này
-import lombok.Data;
-import lombok.NoArgsConstructor;  // 👈 Thêm dòng này
+import lombok.*;
+
 import java.time.LocalDate;
 
-@Data
-@AllArgsConstructor // 👈 Tạo constructor có tham số: new PassengerDTO(name, type, gender, dob)
-@NoArgsConstructor  // 👈 Tạo constructor rỗng: new PassengerDTO() (Cần thiết cho Hibernate/Jackson)
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class PassengerDTO {
+    // Constructor và getters matching BookingService usage
     private String fullName;
-    private String type;     // "ADULT", "CHILD", "INFANT"
-    private String gender;   // "MALE", "FEMALE"
+    private String type; // "ADULT", "CHILD", "INFANT"
+    private String gender;
     private LocalDate dob;
+
 }

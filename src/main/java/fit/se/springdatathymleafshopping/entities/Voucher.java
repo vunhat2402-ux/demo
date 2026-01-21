@@ -1,34 +1,42 @@
 package fit.se.springdatathymleafshopping.entities;
 
+import fit.se.springdatathymleafshopping.entities.enums.DiscountType;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "vouchers")
-@Data
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Voucher {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Integer id;
 
     @Column(unique = true, nullable = false)
     private String code;
 
-    // SỬA: Đổi tên cho khớp với HTML
-    private Double discountValue;     // Giá trị giảm (VD: 10.0 hoặc 50000.0)
-    private Double discountAmount; // Số tiền giảm (VD: 50000) hoặc %
+    @Column(name = "discount_value", precision = 15, scale = 2)
+    private BigDecimal discountValue = BigDecimal.ZERO;
 
-    private String discountType; // "FIXED" (trừ tiền) hoặc "PERCENT" (trừ %)
+    @Column(name = "discount_amount", precision = 15, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO;
 
-    private LocalDate expiryDate; // Ngày hết hạn
+    @Enumerated(EnumType.STRING)
+    private DiscountType discountType;
+
+    private LocalDate expiryDate;
 
     private Boolean isActive = true;
-    private Boolean isPercent;        // True = %, False = Tiền mặt
 
-    private Double minOrderAmount;    // Đơn tối thiểu
-    private Double maxDiscountAmount; // Giảm tối đa
+    private BigDecimal minOrderAmount = BigDecimal.ZERO;
+    private BigDecimal maxDiscountAmount = BigDecimal.ZERO;
 
-    // SỬA: Đổi usageLimit -> quantity cho dễ hiểu
     private Integer quantity;
     private Integer usedCount = 0;
 }

@@ -156,9 +156,19 @@ INSERT IGNORE INTO favorites (id, user_id, tour_id, liked_at) VALUES
     (1, 3, 4, '2026-01-15 08:00:00');
 
 -- 7.4 VOUCHERS
-INSERT IGNORE INTO vouchers (id, code, discount_value, is_percent, max_discount_amount, min_order_amount, expiry_date, quantity, used_count) VALUES
-                                                                                                                                                 (1, 'TET2026', 200000, false, 200000, 1000000, '2026-03-31', 100, 0),
-                                                                                                                                                 (2, 'HE2026', 10.0, true, 1000000, 5000000, '2026-08-31', 50, 0);
+INSERT INTO vouchers (id, code, discount_value, discount_type, max_discount_amount, min_order_amount, expiry_date, quantity, used_count)
+VALUES
+    (1, 'TET2026', 200000.00, 'FIXED', 200000.00, 1000000.00, '2026-03-31', 100, 0),
+    (2, 'HE2026', 10.00, 'PERCENT', 1000000.00, 5000000.00, '2026-08-31', 50, 0)
+ON DUPLICATE KEY UPDATE
+                     code = VALUES(code),
+                     discount_value = VALUES(discount_value),
+                     discount_type = VALUES(discount_type),
+                     max_discount_amount = VALUES(max_discount_amount),
+                     min_order_amount = VALUES(min_order_amount),
+                     expiry_date = VALUES(expiry_date),
+                     quantity = VALUES(quantity),
+                     used_count = VALUES(used_count);
 
 -- 7.5 NEWS (Tin tức)
 INSERT IGNORE INTO news (id, title, short_description, content, image, created_date) VALUES

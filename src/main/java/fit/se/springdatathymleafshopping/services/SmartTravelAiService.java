@@ -2,7 +2,6 @@ package fit.se.springdatathymleafshopping.services;
 
 import fit.se.springdatathymleafshopping.entities.DepartureSchedule;
 import fit.se.springdatathymleafshopping.entities.Tour;
-import fit.se.springdatathymleafshopping.entities.TourItinerary;
 import fit.se.springdatathymleafshopping.repositories.TourRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,11 +38,17 @@ public class SmartTravelAiService {
         for (Tour t : tours) {
             if (t.getIsActive() != null && t.getIsActive()) {
                 String priceStr = "Liên hệ để biết giá";
+
+                // Lấy giá nhỏ nhất (BigDecimal) an toàn với null
                 if (t.getSchedules() != null && !t.getSchedules().isEmpty()) {
-                    Double minPrice = t.getSchedules().stream()
+                    BigDecimal minPrice = t.getSchedules().stream()
                             .map(DepartureSchedule::getPriceAdult)
-                            .min(Double::compare).orElse(0.0);
-                    if (minPrice > 0) priceStr = formatMoney(BigDecimal.valueOf(minPrice));
+                            .filter(Objects::nonNull)
+                            .min(Comparator.naturalOrder())
+                            .orElse(BigDecimal.ZERO);
+                    if (minPrice.compareTo(BigDecimal.ZERO) > 0) {
+                        priceStr = formatMoney(minPrice);
+                    }
                 }
 
                 // Lấy tóm tắt lịch trình (Ví dụ: Ngày 1: ..., Ngày 2: ...)
@@ -71,13 +76,12 @@ public class SmartTravelAiService {
                         itinerarySummary,
                         (t.getDescription() != null && t.getDescription().length() > 100)
                                 ? t.getDescription().substring(0, 100) + "..."
-                                : t.getDescription()
+                                : (t.getDescription() == null ? "" : t.getDescription())
                 ));
             }
         }
 
         // 2. KỊCH BẢN "TRAINING" (Prompt Engineering)
-        // Đây là phần làm cho AI khôn hơn, đóng vai Sale
         String systemInstruction = """
             VAI TRÒ: Bạn là Chuyên gia tư vấn du lịch cao cấp của Smart Travel.
             
@@ -115,23 +119,35 @@ public class SmartTravelAiService {
         }
     }
 
-    // ... (Giữ nguyên các hàm extractResponse, formatMoney)
     private String extractResponse(ResponseEntity<Map> response) {
         try {
             Map body = response.getBody();
             if (body != null && body.containsKey("candidates")) {
                 List<Map> candidates = (List<Map>) body.get("candidates");
                 if (!candidates.isEmpty()) {
-                    Map contentRes = (Map) candidates.get(0).get("content");
-                    List<Map> parts = (List<Map>) contentRes.get("parts");
-                    return (String) parts.get(0).get("text");
+                    Object contentObj = candidates.get(0).get("content");
+                    if (contentObj instanceof Map) {
+                        Map contentRes = (Map) contentObj;
+                        Object partsObj = contentRes.get("parts");
+                        if (partsObj instanceof List) {
+                            List parts = (List) partsObj;
+                            if (!parts.isEmpty() && parts.get(0) instanceof Map) {
+                                Map firstPart = (Map) parts.get(0);
+                                Object text = firstPart.get("text");
+                                if (text instanceof String) return (String) text;
+                            }
+                        }
+                    }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // ignore and fallback
+        }
         return "Xin lỗi, tôi chưa hiểu ý bạn. Bạn có thể hỏi lại rõ hơn không?";
     }
 
     private String formatMoney(BigDecimal amount) {
+        if (amount == null) return "";
         return NumberFormat.getCurrencyInstance(new Locale("vi", "VN")).format(amount);
     }
 }

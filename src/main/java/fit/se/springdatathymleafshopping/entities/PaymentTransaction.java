@@ -1,26 +1,39 @@
 package fit.se.springdatathymleafshopping.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import fit.se.springdatathymleafshopping.entities.enums.PaymentStatus;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payment_transactions")
-@Data
+@Table(name = "payment_transactions", indexes = {
+        @Index(name = "idx_txn_ref", columnList = "txn_ref")
+})
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PaymentTransaction {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Integer id;
 
-    private Double amount; // Số tiền gd
-    private String method; // VNPAY, MOMO, CASH, BANK_TRANSFER
-    private String txnRef; // Mã giao dịch ngân hàng
+    @Column(precision = 15, scale = 2)
+    private BigDecimal amount;
+
+    private String method;
+
+    @Column(name = "txn_ref", unique = true)
+    private String txnRef;
 
     private LocalDateTime paymentTime;
-    private String status; // SUCCESS, FAILED
 
-    @JsonIgnore
-    @ManyToOne
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Booking booking;
 }

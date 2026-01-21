@@ -1,24 +1,28 @@
 package fit.se.springdatathymleafshopping.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 
 @Entity
-@Data
 @Table(name = "users")
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Integer id;
 
     @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false)
-    private String password;
+    private String password; // ensure hashed before save
 
     @Column(name = "full_name")
     private String fullName;
@@ -26,7 +30,6 @@ public class User {
     @Column(name = "phone")
     private String phone;
 
-    // 👇 1. THÊM TRƯỜNG KHÓA TÀI KHOẢN
     private Boolean locked = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
@@ -41,7 +44,7 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Favorite> favorites;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "users_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -53,7 +56,6 @@ public class User {
         this.roles.add(role);
     }
 
-    // Helper để check nhanh
     public boolean isLocked() {
         return locked != null && locked;
     }

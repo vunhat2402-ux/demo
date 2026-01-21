@@ -1,15 +1,20 @@
 package fit.se.springdatathymleafshopping.controllers;
 
 import fit.se.springdatathymleafshopping.entities.*;
+import fit.se.springdatathymleafshopping.entities.enums.BookingStatus;
+import fit.se.springdatathymleafshopping.entities.enums.DiscountType;
 import fit.se.springdatathymleafshopping.repositories.*;
 import fit.se.springdatathymleafshopping.services.AdminStatisticsService;
 import fit.se.springdatathymleafshopping.services.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -34,21 +39,17 @@ public class AdminController {
     @Autowired private AdminStatisticsService statsService;
     @Autowired private ConsultationRequestRepository consultationRepo;
 
-    // 1. THÊM HÀM PROFILE (Để Staff/Admin tự sửa thông tin mình)
+    // 1. PROFILE
     @GetMapping("/profile")
     public String myProfile(Model model) {
-        // Lấy email người đang đăng nhập
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(email).orElseThrow();
-
-        // Tái sử dụng form sửa user có sẵn
-        // Lưu ý: Staff vào đây vẫn sửa được, nhưng ở hàm saveUser bạn nên chặn Staff đổi quyền (Role)
         model.addAttribute("user", currentUser);
         model.addAttribute("listRoles", roleRepository.findAll());
         return "admin/user-form";
     }
 
-    // --- HÀM GHI LOG ---
+    // --- LOGGING ---
     private void saveLog(String action, String description) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(email).orElse(null);
@@ -62,7 +63,7 @@ public class AdminController {
         }
     }
 
-    // ======================== QUẢN LÝ USER ========================
+    // ======================== USER MANAGEMENT ========================
     @GetMapping("/users")
     public String listUsers(Model model) {
         model.addAttribute("staffList", userRepository.findByRoles_Name("STAFF"));
@@ -83,15 +84,14 @@ public class AdminController {
     public String deleteUser(@PathVariable("id") Integer id) {
         User user = userRepository.findById(id).orElseThrow();
 
-        // 1. Xóa tất cả Nhật ký hoạt động của user này trước
-        // Bạn cần inject UserLogRepository vào AdminController nếu chưa có
+        // delete user logs first
         userLogRepository.deleteByUserId(id);
 
-        // 2. Xóa các quyền hạn trong bảng trung gian (users_roles)
+        // clear roles in join table
         user.getRoles().clear();
         userRepository.save(user);
 
-        // 3. Bây giờ mới xóa User
+        // delete user
         userRepository.delete(user);
 
         saveLog("QUẢN LÝ USER", "Đã xóa vĩnh viễn tài khoản: " + user.getEmail());
@@ -101,16 +101,14 @@ public class AdminController {
     @GetMapping("/users/edit/{id}")
     public String showEditUserForm(@PathVariable("id") Integer id, Model model) {
         User user = userRepository.findById(id).orElseThrow();
-
-        // 👇 THÊM DÒNG NÀY: Xóa mật khẩu trước khi gửi ra màn hình để bảo mật
         user.setPassword("");
-
         model.addAttribute("user", user);
         model.addAttribute("listRoles", roleRepository.findAll());
         return "admin/user-form";
     }
 
     @GetMapping("/users/detail/{id}")
+    @Transactional(readOnly = true)
     public String viewUserDetail(@PathVariable("id") Integer id, Model model) {
         User user = userRepository.findById(id).orElseThrow();
         List<Booking> history = bookingRepository.findByUserId(id);
@@ -119,7 +117,7 @@ public class AdminController {
         return "admin/user-detail";
     }
 
-    // ======================== QUẢN LÝ TOUR ========================
+    // ======================== TOUR MANAGEMENT ========================
     @GetMapping("/tours/edit/{id}")
     public String showEditTourForm(@PathVariable("id") Integer id, Model model) {
         Tour tour = tourRepository.findById(id).orElseThrow();
@@ -131,10 +129,10 @@ public class AdminController {
 
     @GetMapping("/tours/add")
     public String showAddTourForm(Model model) {
-        model.addAttribute("tour", new Tour()); // Gửi đối tượng Tour rỗng
-        model.addAttribute("categories", categoryRepository.findAll()); // Danh sách danh mục
-        model.addAttribute("destinations", destinationRepository.findAll()); // Danh sách điểm đến
-        return "admin/tour-form"; // Sử dụng chung template với form Sửa
+        model.addAttribute("tour", new Tour());
+        model.addAttribute("categories", categoryRepository.findAll());
+        model.addAttribute("destinations", destinationRepository.findAll());
+        return "admin/tour-form";
     }
 
     @PostMapping("/tours/save")
@@ -145,10 +143,8 @@ public class AdminController {
 
         boolean isEdit = tourForm.getId() != null;
 
-        // 1. CHẶN TRÙNG MÃ TOUR (Chỉ chặn khi tạo mới hoặc đổi mã khác)
         if (tourRepository.existsByCode(tourForm.getCode())) {
             Tour existingTour = tourRepository.findByCode(tourForm.getCode());
-            // Nếu tạo mới hoàn toàn mà mã đã có, HOẶC sửa tour A nhưng nhập mã của tour B -> BÁO LỖI
             if (!isEdit || !existingTour.getId().equals(tourForm.getId())) {
                 model.addAttribute("error", "Lỗi: Mã tour '" + tourForm.getCode() + "' đã tồn tại trên hệ thống!");
                 model.addAttribute("categories", categoryRepository.findAll());
@@ -161,13 +157,13 @@ public class AdminController {
         if (isEdit) {
             tourToSave = tourRepository.findById(tourForm.getId()).orElse(new Tour());
             tourToSave.setName(tourForm.getName());
-            tourToSave.setCode(tourForm.getCode().toUpperCase()); // Luôn viết hoa mã tour
+            tourToSave.setCode(tourForm.getCode() != null ? tourForm.getCode().toUpperCase() : null);
             tourToSave.setTransport(tourForm.getTransport());
             tourToSave.setDescription(tourForm.getDescription());
-            tourToSave.setDeparturePoint(tourForm.getDeparturePoint()); // Lưu nơi khởi hành
+            tourToSave.setDeparturePoint(tourForm.getDeparturePoint());
         } else {
             tourToSave = tourForm;
-            tourToSave.setCode(tourForm.getCode().toUpperCase());
+            tourToSave.setCode(tourForm.getCode() != null ? tourForm.getCode().toUpperCase() : null);
         }
 
         if (destinationId != null) tourToSave.setDestination(destinationRepository.findById(destinationId).orElse(null));
@@ -178,7 +174,7 @@ public class AdminController {
         return "redirect:/admin/tours";
     }
 
-    // ======================== QUẢN LÝ LỊCH TRÌNH ========================
+    // ======================== ITINERARY ========================
     @GetMapping("/tours/itinerary/{tourId}")
     public String showItinerary(@PathVariable("tourId") Integer tourId, Model model) {
         Tour tour = tourRepository.findById(tourId).orElseThrow();
@@ -193,18 +189,12 @@ public class AdminController {
     public String saveItinerary(@ModelAttribute("newItinerary") TourItinerary itinerary,
                                 @RequestParam("tourId") Integer tourId) {
 
-        // 1. Chặn số ngày âm hoặc bằng 0
         if (itinerary.getDayNumber() <= 0) {
-            // Có thể redirect kèm param error
             return "redirect:/admin/tours/itinerary/" + tourId + "?error=invalid_day";
         }
 
-        // 2. Chặn trùng ngày (Một tour không thể có 2 ngày giống nhau)
-        // Logic: Tìm xem tour này đã có ngày này chưa
         TourItinerary existing = tourItineraryRepository.findByTourIdAndDayNumber(tourId, itinerary.getDayNumber());
-
-        // Nếu đã có và ID khác nhau (nghĩa là đang tạo mới hoặc sửa thành ngày đã tồn tại)
-        if (existing != null && !existing.getId().equals(itinerary.getId())) {
+        if (existing != null && !Objects.equals(existing.getId(), itinerary.getId())) {
             return "redirect:/admin/tours/itinerary/" + tourId + "?error=duplicate_day";
         }
 
@@ -219,18 +209,14 @@ public class AdminController {
     public String deleteItinerary(@PathVariable("id") Integer id) {
         TourItinerary itinerary = tourItineraryRepository.findById(id).orElseThrow();
         Integer tourId = itinerary.getTour().getId();
-
-        // Lấy thông tin trước khi xóa để ghi log
         int dayNum = itinerary.getDayNumber();
         String tourCode = itinerary.getTour().getCode();
-
         tourItineraryRepository.delete(itinerary);
-
         saveLog("LỊCH TRÌNH", "Xóa lịch trình Ngày " + dayNum + " của tour " + tourCode);
         return "redirect:/admin/tours/itinerary/" + tourId;
     }
 
-    // ======================== QUẢN LÝ HÌNH ẢNH ========================
+    // ======================== IMAGES ========================
     @GetMapping("/tours/images/{tourId}")
     public String showImages(@PathVariable("tourId") Integer tourId, Model model) {
         Tour tour = tourRepository.findById(tourId).orElseThrow();
@@ -254,10 +240,7 @@ public class AdminController {
     public String deleteImage(@PathVariable("id") Integer id) {
         TourImage image = tourImageRepository.findById(id).orElseThrow();
         Integer tourId = image.getTour().getId();
-
-        // Lấy mã tour trước khi xóa
         String tourCode = image.getTour().getCode();
-
         tourImageRepository.delete(image);
         saveLog("HÌNH ẢNH", "Xóa một ảnh của tour: " + tourCode);
         return "redirect:/admin/tours/images/" + tourId;
@@ -269,19 +252,15 @@ public class AdminController {
         return "admin/tour-list";
     }
 
-    // ======================== QUẢN LÝ ĐƠN HÀNG ========================
+    // ======================== BOOKINGS ========================
     @GetMapping("/bookings")
     public String listBookings(Model model, @RequestParam(value = "search", required = false) String searchCode) {
         if (searchCode != null && !searchCode.trim().isEmpty()) {
-            // Dùng method findByBookingCode trong Repository
-            // Lưu ý: findByBookingCode trả về Optional, ta chuyển thành List để tái sử dụng view
             Booking booking = bookingRepository.findByBookingCode(searchCode.trim()).orElse(null);
             model.addAttribute("bookings", booking == null ? List.of() : List.of(booking));
             model.addAttribute("searchCode", searchCode);
         } else {
-            // Nếu không tìm kiếm thì hiện tất cả (Sắp xếp mới nhất lên đầu)
             List<Booking> list = bookingRepository.findAll();
-            // Đảo ngược danh sách thủ công hoặc dùng query orderBy
             Collections.reverse(list);
             model.addAttribute("bookings", list);
         }
@@ -289,8 +268,12 @@ public class AdminController {
     }
 
     @GetMapping("/bookings/detail/{id}")
+    @Transactional(readOnly = true)
     public String viewBookingDetail(@PathVariable("id") Integer id, Model model) {
         Booking booking = bookingRepository.findById(id).orElseThrow();
+        // Access lazy relations inside transaction to avoid LazyInitializationException
+        booking.getDetails().size();
+        booking.getPassengers().size();
         model.addAttribute("booking", booking);
         return "admin/booking-detail";
     }
@@ -299,17 +282,21 @@ public class AdminController {
     public String updateBookingStatus(@RequestParam("id") Integer id, @RequestParam("status") String status) {
         Booking booking = bookingRepository.findById(id).orElseThrow();
 
-        // Lưu trạng thái cũ để ghi log
-        String oldStatus = booking.getStatus();
+        String oldStatus = booking.getStatus() != null ? booking.getStatus().name() : "N/A";
 
-        booking.setStatus(status);
+        try {
+            BookingStatus newStatus = BookingStatus.valueOf(status.toUpperCase());
+            booking.setStatus(newStatus);
+        } catch (IllegalArgumentException ex) {
+            return "redirect:/admin/bookings/detail/" + id + "?error=invalid_status";
+        }
+
         bookingRepository.save(booking);
-
-        saveLog("DUYỆT ĐƠN", "Đổi trạng thái đơn " + booking.getBookingCode() + ": " + oldStatus + " -> " + status);
+        saveLog("DUYỆT ĐƠN", "Đổi trạng thái đơn " + booking.getBookingCode() + ": " + oldStatus + " -> " + booking.getStatus().name());
         return "redirect:/admin/bookings/detail/" + id;
     }
 
-    // ======================== QUẢN LÝ VOUCHER ========================
+    // ======================== VOUCHERS ========================
     @GetMapping("/vouchers")
     public String listVouchers(Model model) {
         model.addAttribute("vouchers", voucherRepository.findAll());
@@ -321,30 +308,28 @@ public class AdminController {
     @PostMapping("/vouchers/create")
     public String createVoucher(@ModelAttribute("newVoucher") Voucher voucher, Model model) {
 
-        // --- VALIDATE LOGIC THỰC TẾ ---
-
-        // 1. Kiểm tra số lượng và giá trị giảm không được âm
-        if (voucher.getQuantity() < 1 || voucher.getDiscountValue() <= 0) {
+        // Validate quantity and discount value
+        if (voucher.getQuantity() == null || voucher.getQuantity() < 1 ||
+                voucher.getDiscountValue() == null || voucher.getDiscountValue().compareTo(BigDecimal.ZERO) <= 0) {
             model.addAttribute("error", "Lỗi: Số lượng và Giá trị giảm phải lớn hơn 0!");
-            loadVoucherData(model); // Hàm phụ load lại data (xem bên dưới)
+            loadVoucherData(model);
             return "admin/voucher";
         }
 
-        // 2. Kiểm tra Logic Phần trăm (Không được quá 100%)
-        if (Boolean.TRUE.equals(voucher.getIsPercent()) && voucher.getDiscountValue() > 100) {
+        // If discount type is percent, ensure discountValue <= 100
+        if (voucher.getDiscountType() == DiscountType.PERCENT &&
+                voucher.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
             model.addAttribute("error", "Lỗi: Giảm giá theo phần trăm không được vượt quá 100%!");
             loadVoucherData(model);
             return "admin/voucher";
         }
 
-        // 3. Kiểm tra Ngày quá khứ (Code cũ của bạn)
-        if (voucher.getExpiryDate().isBefore(LocalDate.now())) {
+        if (voucher.getExpiryDate() != null && voucher.getExpiryDate().isBefore(LocalDate.now())) {
             model.addAttribute("error", "Lỗi: Hạn sử dụng không được nhỏ hơn ngày hiện tại!");
             loadVoucherData(model);
             return "admin/voucher";
         }
 
-        // 4. Kiểm tra Trùng mã (Code cũ của bạn)
         if (voucherRepository.existsByCode(voucher.getCode())) {
             model.addAttribute("error", "Lỗi: Mã '" + voucher.getCode() + "' đã tồn tại!");
             loadVoucherData(model);
@@ -356,7 +341,6 @@ public class AdminController {
         return "redirect:/admin/vouchers";
     }
 
-    // Hàm phụ để đỡ viết lặp lại code load data
     private void loadVoucherData(Model model) {
         model.addAttribute("vouchers", voucherRepository.findAll());
         model.addAttribute("today", LocalDate.now());
@@ -364,7 +348,6 @@ public class AdminController {
 
     @GetMapping("/vouchers/delete/{id}")
     public String deleteVoucher(@PathVariable("id") Integer id) {
-        // Tìm voucher để lấy Code trước khi xóa
         Voucher v = voucherRepository.findById(id).orElse(null);
         if (v != null) {
             String code = v.getCode();
@@ -374,7 +357,7 @@ public class AdminController {
         return "redirect:/admin/vouchers";
     }
 
-    // ======================== CÁC TRANG KHÁC ========================
+    // ======================== OTHER PAGES ========================
     @GetMapping("/logs")
     public String showLogs(Model model) {
         model.addAttribute("logs", userLogRepository.findAllByOrderByTimestampDesc());
@@ -394,31 +377,54 @@ public class AdminController {
         long totalCustomers = userRepository.countCustomers();
         long totalStaffs = userRepository.countStaffs();
 
-        double revenue = allBookings.stream().filter(b -> "PAID_FULL".equals(b.getStatus())).mapToDouble(Booking::getTotalAmount).sum();
-        long pendingOrders = allBookings.stream().filter(b -> "PENDING".equals(b.getStatus())).count();
-        List<DepartureSchedule> upcomingSchedules = allSchedules.stream().filter(s -> s.getStartDate().isAfter(LocalDate.now())).sorted(Comparator.comparing(DepartureSchedule::getStartDate)).limit(5).collect(Collectors.toList());
-        List<DepartureSchedule> hotSchedules = allSchedules.stream().filter(s -> s.getStartDate().isAfter(LocalDate.now())).filter(s -> (double) s.getBooked() / s.getQuota() > 0.8).limit(5).collect(Collectors.toList());
+        BigDecimal revenue = allBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.PAID)
+                .map(b -> b.getTotalAmount() == null ? BigDecimal.ZERO : b.getTotalAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long pendingOrders = allBookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.PENDING)
+                .count();
+
+        List<DepartureSchedule> upcomingSchedules = allSchedules.stream()
+                .filter(s -> s.getStartDate() != null && s.getStartDate().isAfter(LocalDate.now()))
+                .sorted(Comparator.comparing(DepartureSchedule::getStartDate))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        List<DepartureSchedule> hotSchedules = allSchedules.stream()
+                .filter(s -> s.getStartDate() != null && s.getStartDate().isAfter(LocalDate.now()))
+                .filter(s -> {
+                    Integer quota = s.getQuota() == null ? 0 : s.getQuota();
+                    Integer booked = s.getBooked() == null ? 0 : s.getBooked();
+                    if (quota == 0) return false;
+                    BigDecimal ratio = new BigDecimal(booked).divide(new BigDecimal(quota), 4, RoundingMode.HALF_UP);
+                    return ratio.compareTo(new BigDecimal("0.8")) > 0;
+                })
+                .limit(5)
+                .collect(Collectors.toList());
+
         LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
         Long newBookingsToday = bookingRepository.countByBookingDateAfter(startOfToday);
+
         List<String> chartLabels = new ArrayList<>();
-        List<Double> chartData = new ArrayList<>();
+        List<BigDecimal> chartData = new ArrayList<>();
 
         LocalDate today = LocalDate.now();
-        // Lặp qua 6 tháng gần nhất (từ 5 tháng trước đến tháng hiện tại)
         for (int i = 5; i >= 0; i--) {
             LocalDate monthStart = today.minusMonths(i).withDayOfMonth(1);
             LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
-
-            // Tạo nhãn: "T1", "T2", ...
             chartLabels.add("T" + monthStart.getMonthValue());
 
-            // Tính tổng tiền các đơn hàng ĐÃ THANH TOÁN (PAID_FULL) trong tháng đó
-            double monthlyRevenue = allBookings.stream()
-                    .filter(b -> "PAID_FULL".equals(b.getStatus())) // Chỉ tính đơn đã trả tiền
-                    .filter(b -> !b.getBookingDate().toLocalDate().isBefore(monthStart) &&
-                            !b.getBookingDate().toLocalDate().isAfter(monthEnd))
-                    .mapToDouble(Booking::getTotalAmount)
-                    .sum();
+            BigDecimal monthlyRevenue = allBookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.PAID)
+                    .filter(b -> {
+                        if (b.getBookingDate() == null) return false;
+                        LocalDate d = b.getBookingDate().toLocalDate();
+                        return !d.isBefore(monthStart) && !d.isAfter(monthEnd);
+                    })
+                    .map(b -> b.getTotalAmount() == null ? BigDecimal.ZERO : b.getTotalAmount())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             chartData.add(monthlyRevenue);
         }
@@ -436,29 +442,31 @@ public class AdminController {
         model.addAttribute("stats", statsService.getDashboardStats());
         model.addAttribute("newRequests", consultationRepo.findByIsProcessedFalseOrderByCreatedDateDesc(PageRequest.of(0, 5)));
 
-        List<Booking> recentBookings = allBookings.stream().sorted(Comparator.comparing(Booking::getBookingDate).reversed()).limit(5).collect(Collectors.toList());
+        List<Booking> recentBookings = allBookings.stream()
+                .sorted(Comparator.comparing(Booking::getBookingDate, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .limit(5)
+                .collect(Collectors.toList());
         model.addAttribute("recentBookings", recentBookings);
 
         return "admin/dashboard";
     }
-    // --- 1. HIỂN THỊ FORM TẠO MỚI (Thêm hàm này) ---
+
+    // CREATE USER FORM
     @GetMapping("/users/create")
     public String showCreateUserForm(Model model) {
-        model.addAttribute("user", new User()); // Gửi user rỗng sang form
-        model.addAttribute("listRoles", roleRepository.findAll()); // Để chọn quyền (Admin/Staff)
+        model.addAttribute("user", new User());
+        model.addAttribute("listRoles", roleRepository.findAll());
         return "admin/user-form";
     }
 
-    // --- 2. NÂNG CẤP HÀM LƯU USER (Thay thế hàm saveUser cũ) ---
+    // SAVE USER (create/update)
     @PostMapping("/users/save")
     public String saveUser(@ModelAttribute("user") User userForm,
                            @RequestParam(value = "roleIds", required = false) List<Integer> roleIds,
-                           // 👇 BẠN ĐANG THIẾU DÒNG NÀY 👇
                            @RequestParam(value = "newPassword", required = false) String newPassword,
                            Model model) {
 
-        // --- 1. VALIDATE (Giữ nguyên) ---
-        // A. Kiểm tra Email (Phải đuôi @gmail.com)
+        // Validation
         if (userForm.getId() == null) {
             if (userForm.getEmail() == null || !userForm.getEmail().toLowerCase().endsWith("@gmail.com")) {
                 model.addAttribute("error", "Lỗi: Email phải thuộc tên miền @gmail.com!");
@@ -467,12 +475,10 @@ public class AdminController {
             }
         }
 
-        // B. Kiểm tra Số điện thoại
         String phoneRegex = "^(03|05|07|08|09)\\d{8,9}$";
         if (userForm.getPhone() == null || !userForm.getPhone().matches(phoneRegex)) {
             model.addAttribute("error", "Lỗi: SĐT không hợp lệ! Phải là số VN (đầu 03,05,07,08,09) và có 10-11 số.");
             model.addAttribute("listRoles", roleRepository.findAll());
-            // Fix lỗi mất email khi reload form
             if (userForm.getId() != null) {
                 User oldUser = userRepository.findById(userForm.getId()).orElse(new User());
                 userForm.setEmail(oldUser.getEmail());
@@ -480,9 +486,7 @@ public class AdminController {
             return "admin/user-form";
         }
 
-        // --- 2. XỬ LÝ LƯU ---
-
-        // A. TRƯỜNG HỢP: THÊM MỚI (ID là null)
+        // Create new
         if (userForm.getId() == null) {
             if (userRepository.existsByEmail(userForm.getEmail())) {
                 model.addAttribute("error", "Email đã tồn tại!");
@@ -490,7 +494,7 @@ public class AdminController {
                 return "admin/user-form";
             }
 
-            userForm.setPassword("{noop}123456"); // Mật khẩu mặc định
+            userForm.setPassword("{noop}123456");
 
             if (roleIds != null) {
                 userForm.setRoles(new HashSet<>(roleRepository.findAllById(roleIds)));
@@ -500,21 +504,16 @@ public class AdminController {
 
             userRepository.save(userForm);
             saveLog("QUẢN LÝ USER", "Đã tạo tài khoản mới: " + userForm.getEmail());
-        }
-
-        // B. TRƯỜNG HỢP: CẬP NHẬT (Đã có ID)
-        else {
+        } else {
             User existing = userRepository.findById(userForm.getId()).orElse(userForm);
             existing.setFullName(userForm.getFullName());
             existing.setPhone(userForm.getPhone());
-            existing.setLocked(userForm.getLocked()); // Cập nhật trạng thái khóa nếu có
+            existing.setLocked(userForm.getLocked());
 
-            // 👇 LOGIC ĐỔI MẬT KHẨU MỚI (Giờ biến newPassword đã được khai báo ở trên)
             if (newPassword != null && !newPassword.trim().isEmpty()) {
                 existing.setPassword("{noop}" + newPassword);
             }
 
-            // Cập nhật quyền
             if (roleIds != null) {
                 existing.setRoles(new HashSet<>(roleRepository.findAllById(roleIds)));
             } else {
@@ -527,43 +526,35 @@ public class AdminController {
 
         return "redirect:/admin/users";
     }
+
     @GetMapping("/tours/delete/{id}")
     public String deleteTour(@PathVariable("id") Integer id) {
-        // Kiểm tra xem có đơn hàng (Booking) nào đang dùng tour này không trước khi xóa
-        // Nếu có đơn hàng, thực tế nên dùng tour.setActive(false) thay vì xóa vĩnh viễn
-        tourRepository.deleteById(id); // ✅ Dùng deleteById thay vì delete(id)
+        tourRepository.deleteById(id);
         saveLog("XÓA TOUR", "Đã xóa tour ID: " + id);
         return "redirect:/admin/tours";
     }
-    // --- HIỂN THỊ FORM THÊM LỊCH KHỞI HÀNH ---
+
+    // SCHEDULE FORM
     @GetMapping("/schedules/add")
     public String showAddScheduleForm(@RequestParam(value = "tourId", required = false) Integer tourId, Model model) {
         DepartureSchedule schedule = new DepartureSchedule();
-
-        // Nếu đi từ nút "Thêm lịch" ở một Tour cụ thể, tự động gán Tour đó vào
         if (tourId != null) {
             tourRepository.findById(tourId).ifPresent(schedule::setTour);
         }
-
         model.addAttribute("schedule", schedule);
-        model.addAttribute("tours", tourRepository.findAll()); // Để chọn Tour trong dropdown
-        return "admin/schedule-form"; // Tên file HTML bạn cần tạo ở Bước 2
+        model.addAttribute("tours", tourRepository.findAll());
+        return "admin/schedule-form";
     }
 
-    // --- LƯU LỊCH KHỞI HÀNH ---
+    // SAVE SCHEDULE
     @PostMapping("/schedules/save")
     public String saveSchedule(@ModelAttribute("schedule") DepartureSchedule schedule) {
-        // Ràng buộc thực tế: booked mặc định là 0 khi tạo mới
         if (schedule.getId() == null) {
             schedule.setBooked(0);
         }
-
         scheduleRepository.save(schedule);
-
-        // Ghi log
         String tourCode = schedule.getTour() != null ? schedule.getTour().getCode() : "N/A";
         saveLog("LỊCH KHỞI HÀNH", "Đã lưu lịch khởi hành ngày " + schedule.getStartDate() + " cho tour " + tourCode);
-
         return "redirect:/admin/schedules";
     }
 }

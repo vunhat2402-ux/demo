@@ -1,28 +1,33 @@
 package fit.se.springdatathymleafshopping.entities;
 
+import fit.se.springdatathymleafshopping.entities.enums.PassengerType;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "booking_passengers")
-@Data
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BookingPassenger {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Integer id;
 
     private String fullName;
-    private LocalDate dob; // Ngày sinh (Bắt buộc để tính vé/bảo hiểm)
+    private LocalDate dob;
     private String gender;
 
-    // Loại khách: ADULT, CHILD, INFANT
-    private String type;
+    @Enumerated(EnumType.STRING)
+    private PassengerType type;
 
-    // Giấy tờ tùy thân (Cho tour nước ngoài)
     private String passportNumber;
     private LocalDate passportExpiry;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Booking booking;
 }

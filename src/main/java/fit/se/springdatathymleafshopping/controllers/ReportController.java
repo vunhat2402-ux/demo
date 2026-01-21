@@ -1,6 +1,7 @@
 package fit.se.springdatathymleafshopping.controllers;
 
 import fit.se.springdatathymleafshopping.entities.Booking;
+import fit.se.springdatathymleafshopping.entities.enums.BookingStatus;
 import fit.se.springdatathymleafshopping.repositories.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,7 +10,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Controller
@@ -22,21 +25,23 @@ public class ReportController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public String showRevenueReport(Model model) {
-        // Chỉ lấy các đơn đã hoàn tất thanh toán hoặc đã cọc
+        // Lấy tất cả booking, lọc những booking có status hợp lệ (PAID hoặc DEPOSITED)
         List<Booking> validBookings = bookingRepository.findAll().stream()
-                .filter(b -> "PAID_FULL".equals(b.getStatus()) || "DEPOSITED".equals(b.getStatus()))
+                .filter(b -> {
+                    BookingStatus s = b == null ? null : b.getStatus();
+                    return s == BookingStatus.PAID || s == BookingStatus.DEPOSITED;
+                })
                 .collect(Collectors.toList());
 
-        // Tính tổng dựa trên trường totalAmount đã được tính sẵn lúc đặt tour
-        // Không cần loop tính lại từng người nữa -> Nhanh và chính xác hơn
-        Double totalRevenue = validBookings.stream()
-                .mapToDouble(Booking::getTotalAmount)
-                .sum();
+        // Tính tổng doanh thu (totalAmount) bằng BigDecimal
+        BigDecimal totalRevenue = validBookings.stream()
+                .map(b -> b.getTotalAmount() == null ? BigDecimal.ZERO : b.getTotalAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Tính thực thu (Tiền mặt đã cầm)
-        Double actualCashReceived = validBookings.stream()
-                .mapToDouble(Booking::getPaidAmount)
-                .sum();
+        // Tính thực thu (paidAmount) bằng BigDecimal
+        BigDecimal actualCashReceived = validBookings.stream()
+                .map(b -> b.getPaidAmount() == null ? BigDecimal.ZERO : b.getPaidAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         model.addAttribute("bookings", validBookings);
         model.addAttribute("totalRevenue", totalRevenue);
