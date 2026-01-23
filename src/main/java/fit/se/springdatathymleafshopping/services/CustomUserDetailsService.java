@@ -19,19 +19,25 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // 1. Tìm user trong DB bằng EMAIL (Dùng hàm vừa sửa ở Bước 1)
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        if (user == null) {
-            throw new UsernameNotFoundException("Không tìm thấy tài khoản với email: " + email);
-        }
+        // QUAN TRỌNG: Dòng này báo cho Spring Security biết user có bị khóa hay không
+        // user.getLocked() == true (bị khóa) -> isAccountNonLocked phải là false
+        boolean enabled = true;
+        boolean accountNonExpired = true;
+        boolean credentialsNonExpired = true;
+        boolean accountNonLocked = (user.getLocked() == null || !user.getLocked()); // ✅ SỬA DÒNG NÀY
 
-        // 2. Chuyển đổi User của mình thành User của Spring Security
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),          // Tên đăng nhập là Email
-                user.getPassword(),       // Mật khẩu (đã mã hóa)
-                user.getRoles().stream()  // Lấy danh sách quyền (Roles)
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName())) // Thêm tiền tố ROLE_
+                user.getEmail(),
+                user.getPassword(),
+                enabled,
+                accountNonExpired,
+                credentialsNonExpired,
+                accountNonLocked, // 👈 Truyền trạng thái khóa vào đây
+                user.getRoles().stream() // hoặc logic lấy roles của bạn
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
                         .collect(Collectors.toList())
         );
     }

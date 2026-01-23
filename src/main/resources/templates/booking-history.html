@@ -22,45 +22,51 @@
           </tr>
           </thead>
           <tbody>
-          <!-- Mỗi phần tử trong bookings là BookingResponseDTO -->
           <tr th:each="b : ${bookings}">
-            <td class="ps-4 fw-bold text-primary">#[[${b.bookingCode != null ? b.bookingCode : '??'}]]</td>
 
-            <td>
-              <div class="fw-bold" th:text="${b.tourName != null ? b.tourName : 'Thông tin tour không có sẵn'}">Tên Tour</div>
-              <small class="text-muted" th:text="${b.tourDuration != null ? b.tourDuration : ''}">3N2D</small>
+            <td class="ps-4 fw-bold text-primary">
+              #<span th:text="${b.bookingCode != null ? b.bookingCode : b.id}"></span>
             </td>
 
-            <td th:text="${b.startDate != null ? #temporals.format(b.startDate, 'dd/MM/yyyy') : 'N/A'}">10/10/2025</td>
+            <td>
+              <div class="fw-bold" th:text="${b.tourName != null ? b.tourName : 'Đang cập nhật...'}">Tên Tour</div>
+              <small class="text-muted" th:text="${b.tourDuration != null ? b.tourDuration : '3N2Đ'}">Duration</small>
+            </td>
+
+            <td th:text="${b.startDate != null ? #temporals.format(b.startDate, 'dd/MM/yyyy') : 'N/A'}"></td>
 
             <td class="fw-bold text-danger">
-              <span th:if="${b.totalAmount != null}" th:text="${#numbers.formatDecimal(b.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+      <span th:if="${b.totalAmount != null}"
+            th:text="${#numbers.formatDecimal(b.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+      </span>
               <span th:if="${b.totalAmount == null}">0 đ</span>
             </td>
 
             <td>
-              <span th:if="${b.status == null}" class="badge bg-secondary">Không xác định</span>
-
-              <span th:if="${b.status == 'PENDING'}" class="badge bg-warning text-dark">Chờ thanh toán</span>
-              <span th:if="${b.status == 'PAID' or b.status == 'PAID_FULL'}" class="badge bg-success">Đã thanh toán</span>
-              <span th:if="${b.status == 'CANCELLED'}" class="badge bg-secondary">Đã hủy</span>
-              <span th:if="${b.status == 'FAILED'}" class="badge bg-danger">Thất bại</span>
+      <span th:switch="${b.status}">
+          <span th:case="'PENDING'" class="badge bg-warning text-dark">Chờ thanh toán</span>
+          <span th:case="'PAID'" class="badge bg-success">Đã thanh toán</span>
+          <span th:case="'CANCELLED'" class="badge bg-secondary">Đã hủy</span>
+          <span th:case="*" class="badge bg-info" th:text="${b.status}">Khác</span>
+      </span>
             </td>
 
             <td>
               <a th:if="${b.status == 'PENDING'}"
                  th:href="@{/booking/payment/{id}(id=${b.id})}"
-                 class="btn btn-sm btn-success">Thanh toán</a>
+                 class="btn btn-sm btn-success">
+                <i class="fas fa-credit-card"></i> Thanh toán
+              </a>
 
-              <a th:href="@{/booking/detail/{id}(id=${b.id})}" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+              <a th:href="@{/booking/detail/{id}(id=${b.id})}" class="btn btn-sm btn-outline-primary">
+                Chi tiết
+              </a>
             </td>
           </tr>
 
-          <tr th:if="${bookings == null or #lists.isEmpty(bookings)}">
-            <td colspan="6" class="text-center text-muted py-4">
-              <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" width="80" class="opacity-50 mb-3" alt="empty">
-              <p class="mb-1">Bạn chưa có lịch sử đặt vé nào.</p>
-              <a href="/" class="btn btn-primary btn-sm">Khám phá ngay</a>
+          <tr th:if="${#lists.isEmpty(bookings)}">
+            <td colspan="6" class="text-center py-4 text-muted">
+              Bạn chưa có lịch sử đặt tour nào.
             </td>
           </tr>
           </tbody>

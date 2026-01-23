@@ -4,6 +4,7 @@ import fit.se.springdatathymleafshopping.entities.Booking;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -16,35 +17,63 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void sendBookingConfirmation(String toEmail, Booking booking) {
+    // 👇 Lấy email từ application.properties để làm người gửi (Fix lỗi 555)
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
+    public void sendBookingConfirmation(Booking booking) {
         try {
+            // 1. Lấy thông tin người nhận
+            String toEmail = booking.getCustomerEmail();
+            String customerName = booking.getCustomerName();
+
+            // Xử lý mã đơn (ưu tiên BookingCode, nếu null thì lấy ID)
+            String bookingCode = booking.getBookingCode() != null ? booking.getBookingCode() : String.valueOf(booking.getId());
+
+            // Xử lý thông tin Tour an toàn (tránh lỗi nếu dữ liệu Tour bị thiếu)
+            String tourName = (booking.getSchedule() != null && booking.getSchedule().getTour() != null)
+                    ? booking.getSchedule().getTour().getName()
+                    : "Không xác định";
+
+            String startDate = (booking.getSchedule() != null)
+                    ? booking.getSchedule().getStartDate().toString()
+                    : "N/A";
+
+            // 2. Tạo Email
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
 
-            helper.setTo(toEmail);
-            helper.setSubject("Xác nhận đặt tour thành công - Mã đơn: " + booking.getId());
+            // 👇 QUAN TRỌNG: Phải set người gửi để Gmail không chặn
+            helper.setFrom(fromEmail);
 
-            // Nội dung Email (HTML)
+            helper.setTo(toEmail);
+            helper.setSubject("Xác nhận đặt tour thành công - Mã đơn: " + bookingCode);
+
+            // 3. Nội dung HTML chuyên nghiệp
             String htmlContent = "<h3>Cảm ơn quý khách đã đặt tour tại Smart Travel!</h3>"
-                    + "<p>Xin chào <b>" + booking.getUser().getFullName() + "</b>,</p>"
+                    + "<p>Xin chào <b>" + customerName + "</b>,</p>"
                     + "<p>Đơn hàng của bạn đã được thanh toán thành công.</p>"
                     + "<hr>"
                     + "<ul>"
-                    + "<li><b>Mã đơn:</b> #" + booking.getId() + "</li>"
-                    + "<li><b>Tour:</b> " + booking.getSchedule().getTour().getName() + "</li>"
-                    + "<li><b>Ngày đi:</b> " + booking.getSchedule().getStartDate() + "</li>"
+                    + "<li><b>Mã đơn:</b> #" + bookingCode + "</li>"
+                    + "<li><b>Tour:</b> " + tourName + "</li>"
+                    + "<li><b>Ngày đi:</b> " + startDate + "</li>"
                     + "<li><b>Tổng tiền:</b> " + String.format("%,.0f", booking.getTotalAmount()) + " VNĐ</li>"
                     + "</ul>"
-                    + "<p>Vui lòng đến đúng giờ tại điểm hẹn.</p>"
+                    + "<p>Vui lòng mang theo email này khi đến điểm hẹn.</p>"
                     + "<p>Trân trọng,<br>Đội ngũ Smart Travel</p>";
 
-            helper.setText(htmlContent, true); // true để bật chế độ HTML
+            helper.setText(htmlContent, true); // true = bật chế độ HTML
 
+            // 4. Gửi mail
             mailSender.send(message);
-            System.out.println("Đã gửi email thành công cho: " + toEmail);
+            System.out.println("✅ Đã gửi email thành công cho: " + toEmail);
 
         } catch (MessagingException e) {
-            System.err.println("Lỗi gửi mail: " + e.getMessage());
+            System.err.println("❌ Lỗi gửi mail (Messaging): " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khác khi gửi mail: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

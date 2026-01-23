@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -296,54 +297,83 @@ public class AdminController {
         return "redirect:/admin/bookings/detail/" + id;
     }
 
-    // ======================== VOUCHERS ========================
+    // ======================== VOUCHERS (ĐÃ NÂNG CẤP) ========================
     @GetMapping("/vouchers")
     public String listVouchers(Model model) {
         model.addAttribute("vouchers", voucherRepository.findAll());
-        model.addAttribute("newVoucher", new Voucher());
+        model.addAttribute("newVoucher", new Voucher()); // Form rỗng để tạo mới
         model.addAttribute("today", LocalDate.now());
         return "admin/voucher";
     }
 
-    @PostMapping("/vouchers/create")
-    public String createVoucher(@ModelAttribute("newVoucher") Voucher voucher, Model model) {
+    // 👇 API MỚI: HIỆN FORM SỬA VOUCHER
+    @GetMapping("/vouchers/edit/{id}")
+    public String editVoucher(@PathVariable("id") Integer id, Model model) {
+        Voucher voucher = voucherRepository.findById(id).orElse(null);
+        if (voucher == null) return "redirect:/admin/vouchers";
 
-        // Validate quantity and discount value
-        if (voucher.getQuantity() == null || voucher.getQuantity() < 1 ||
-                voucher.getDiscountValue() == null || voucher.getDiscountValue().compareTo(BigDecimal.ZERO) <= 0) {
-            model.addAttribute("error", "Lỗi: Số lượng và Giá trị giảm phải lớn hơn 0!");
-            loadVoucherData(model);
-            return "admin/voucher";
+        model.addAttribute("vouchers", voucherRepository.findAll());
+        model.addAttribute("newVoucher", voucher); // Đổ dữ liệu cũ vào form
+        model.addAttribute("today", LocalDate.now());
+        model.addAttribute("isEditMode", true); // Cờ để giao diện biết đang sửa
+        return "admin/voucher";
+    }
+
+    @PostMapping("/vouchers/create")
+    public String createOrUpdateVoucher(@ModelAttribute("newVoucher") Voucher voucher,
+                                        BindingResult bindingResult, // 👈 QUAN TRỌNG: Phải có cái này ngay sau @ModelAttribute
+                                        Model model) {
+
+        // 1. BẮT LỖI ĐỊNH DẠNG (Ngày tháng, Số, Enum...)
+        // Nếu không có đoạn này, khi sai định dạng Spring sẽ trả về lỗi 400 trang trắng
+        if (bindingResult.hasErrors()) {
+            System.out.println(">>> LỖI BINDING: " + bindingResult.getAllErrors()); // In lỗi ra console để debug
+            return returnVoucherError(model, "Lỗi định dạng dữ liệu! Vui lòng kiểm tra lại ngày tháng hoặc nhập liệu.");
         }
 
-        // If discount type is percent, ensure discountValue <= 100
-        if (voucher.getDiscountType() == DiscountType.PERCENT &&
-                voucher.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
-            model.addAttribute("error", "Lỗi: Giảm giá theo phần trăm không được vượt quá 100%!");
-            loadVoucherData(model);
-            return "admin/voucher";
+        boolean isUpdate = (voucher.getId() != null); // Kiểm tra xem có ID không (Sửa hay Tạo mới)
+
+        // 2. Validate dữ liệu cơ bản (Số lượng, Giá trị...)
+        if (voucher.getQuantity() == null || voucher.getQuantity() < 1 ||
+                voucher.getDiscountValue() == null || voucher.getDiscountValue().compareTo(BigDecimal.ZERO) <= 0) {
+            return returnVoucherError(model, "Lỗi: Số lượng và Giá trị giảm phải lớn hơn 0!");
+        }
+
+        if (voucher.getDiscountType() == DiscountType.PERCENT && voucher.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
+            return returnVoucherError(model, "Lỗi: Giảm giá phần trăm không được quá 100%!");
         }
 
         if (voucher.getExpiryDate() != null && voucher.getExpiryDate().isBefore(LocalDate.now())) {
-            model.addAttribute("error", "Lỗi: Hạn sử dụng không được nhỏ hơn ngày hiện tại!");
-            loadVoucherData(model);
-            return "admin/voucher";
+            return returnVoucherError(model, "Lỗi: Hạn sử dụng không được nhỏ hơn ngày hiện tại!");
         }
 
-        if (voucherRepository.existsByCode(voucher.getCode())) {
-            model.addAttribute("error", "Lỗi: Mã '" + voucher.getCode() + "' đã tồn tại!");
-            loadVoucherData(model);
-            return "admin/voucher";
+        // 3. Validate Trùng Mã Code
+        // Tìm voucher trong DB bằng code
+        Voucher existing = voucherRepository.findByCode(voucher.getCode()).orElse(null);
+        if (existing != null) {
+            // Trường hợp 1: Tạo mới mà mã đã tồn tại -> Lỗi
+            if (!isUpdate) {
+                return returnVoucherError(model, "Lỗi: Mã '" + voucher.getCode() + "' đã tồn tại!");
+            }
+            // Trường hợp 2: Đang sửa (Update) mà mã lại trùng với một voucher KHÁC -> Lỗi
+            // (existing.getId() khác với voucher.getId() đang sửa)
+            if (isUpdate && !existing.getId().equals(voucher.getId())) {
+                return returnVoucherError(model, "Lỗi: Mã '" + voucher.getCode() + "' đã thuộc về voucher khác!");
+            }
         }
 
+        // 4. Lưu vào Database
         voucherRepository.save(voucher);
-        saveLog("KHUYẾN MÃI", "Tạo mã giảm giá mới: " + voucher.getCode());
+        saveLog("KHUYẾN MÃI", (isUpdate ? "Cập nhật" : "Tạo mới") + " voucher: " + voucher.getCode());
+
         return "redirect:/admin/vouchers";
     }
 
-    private void loadVoucherData(Model model) {
+    private String returnVoucherError(Model model, String msg) {
+        model.addAttribute("error", msg);
         model.addAttribute("vouchers", voucherRepository.findAll());
         model.addAttribute("today", LocalDate.now());
+        return "admin/voucher";
     }
 
     @GetMapping("/vouchers/delete/{id}")

@@ -3,6 +3,7 @@ package fit.se.springdatathymleafshopping.entities;
 import fit.se.springdatathymleafshopping.entities.enums.DiscountType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,9 +28,12 @@ public class Voucher {
     @Column(name = "discount_amount", precision = 15, scale = 2)
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
+    @Column(name = "discount_type")
     @Enumerated(EnumType.STRING)
     private DiscountType discountType;
 
+    @Column(name = "expiry_date")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate expiryDate;
 
     private Boolean isActive = true;

@@ -7,7 +7,8 @@ import fit.se.springdatathymleafshopping.entities.enums.BookingStatus;
 import fit.se.springdatathymleafshopping.entities.enums.PassengerType;
 import fit.se.springdatathymleafshopping.entities.enums.PaymentMethod;
 import fit.se.springdatathymleafshopping.repositories.*;
-import fit.se.springdatathymleafshopping.services.VNPayService; // <--- 1. IMPORT SERVICE MỚI
+import fit.se.springdatathymleafshopping.services.MoMoService;
+import fit.se.springdatathymleafshopping.services.VNPayService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,88 +30,81 @@ public class BookingApiController {
     private final BookingPassengerRepository passengerRepo;
     private final DepartureScheduleRepository scheduleRepo;
     private final UserRepository userRepo;
-    private final VNPayService vnPayService; // <--- 2. KHAI BÁO BIẾN
+    private final VNPayService vnPayService;
+    private final MoMoService moMoService;
 
-    // 3. INJECT SERVICE VÀO CONSTRUCTOR
     public BookingApiController(BookingRepository bookingRepo,
                                 BookingPassengerRepository passengerRepo,
                                 DepartureScheduleRepository scheduleRepo,
                                 UserRepository userRepo,
-                                VNPayService vnPayService) {
+                                VNPayService vnPayService,
+                                MoMoService moMoService) {
         this.bookingRepo = bookingRepo;
         this.passengerRepo = passengerRepo;
         this.scheduleRepo = scheduleRepo;
         this.userRepo = userRepo;
         this.vnPayService = vnPayService;
+        this.moMoService = moMoService;
     }
 
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody BookingRequestDTO req,
                                            @RequestParam(value = "scheduleId", required = false) Integer scheduleIdFromQuery) {
 
-        // ==================================================================
-        // PHẦN 1: LOGIC CŨ CỦA BẠN (GIỮ NGUYÊN 100%)
-        // ==================================================================
-
-        // allow scheduleId in query param for legacy frontend
+        // 1. Xử lý ID lịch trình
         if (req.getScheduleId() == null && scheduleIdFromQuery != null) {
             req.setScheduleId(scheduleIdFromQuery);
         }
-
         if (req.getScheduleId() == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "scheduleId is required"));
+            return ResponseEntity.badRequest().body(Map.of("error", "Vui lòng cung cấp Schedule ID"));
         }
 
-        // 1. LẤY LỊCH KHỞI HÀNH
         DepartureSchedule schedule = scheduleRepo.findById(req.getScheduleId())
-                .orElseThrow(() -> new RuntimeException("Lịch khởi hành không tồn tại"));
+                .orElseThrow(() -> new RuntimeException("Lịch trình không tồn tại"));
 
-        // 2. TẠO DANH SÁCH PASSENGER NẾU FORM KHÔNG GỬI
+        // 2. Tạo danh sách hành khách mặc định nếu thiếu
         if (req.getPassengers() == null || req.getPassengers().isEmpty()) {
             List<PassengerDTO> auto = new ArrayList<>();
             int adults = req.getAdultCount() == null ? 1 : req.getAdultCount();
             int children = req.getChildCount() == null ? 0 : req.getChildCount();
             int infants = req.getInfantCount() == null ? 0 : req.getInfantCount();
-            for (int i = 0; i < adults; i++) auto.add(new PassengerDTO("Người lớn " + (i+1), "ADULT", "UNKNOWN", null));
-            for (int i = 0; i < children; i++) auto.add(new PassengerDTO("Trẻ em " + (i+1), "CHILD", "UNKNOWN", null));
-            for (int i = 0; i < infants; i++) auto.add(new PassengerDTO("Em bé " + (i+1), "INFANT", "UNKNOWN", null));
+
+            for (int i = 0; i < adults; i++) auto.add(new PassengerDTO("Người lớn " + (i + 1), "ADULT", "UNKNOWN", null));
+            for (int i = 0; i < children; i++) auto.add(new PassengerDTO("Trẻ em " + (i + 1), "CHILD", "UNKNOWN", null));
+            for (int i = 0; i < infants; i++) auto.add(new PassengerDTO("Em bé " + (i + 1), "INFANT", "UNKNOWN", null));
+
             req.setPassengers(auto);
         }
 
-        int totalGuests = req.getPassengers() == null ? 0 : req.getPassengers().size();
-
-        // 3. CHECK CÒN CHỖ
-        int booked = schedule.getBooked() == null ? 0 : schedule.getBooked();
+        // 3. Kiểm tra số lượng chỗ trống (Trừ kho)
+        int currentBooked = schedule.getBooked() == null ? 0 : schedule.getBooked();
         int quota = schedule.getQuota() == null ? Integer.MAX_VALUE : schedule.getQuota();
-        if (booked + totalGuests > quota) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Lịch này không đủ chỗ trống"));
+        int totalGuests = req.getPassengers().size();
+
+        if (currentBooked + totalGuests > quota) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Lịch khởi hành này đã hết chỗ hoặc không đủ số lượng ghế trống."));
         }
 
-        // 4. TÍNH TIỀN (Giữ nguyên logic BigDecimal của bạn)
+        // 4. Tính toán tổng tiền
         BigDecimal adultPrice = schedule.getPriceAdult() == null ? BigDecimal.ZERO : schedule.getPriceAdult();
-        BigDecimal childPrice = schedule.getPriceChild() != null
-                ? schedule.getPriceChild()
-                : adultPrice.multiply(new BigDecimal("0.75")).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal infantPrice = schedule.getPriceInfant() != null
-                ? schedule.getPriceInfant()
-                : adultPrice.multiply(new BigDecimal("0.10")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal childPrice = schedule.getPriceChild() != null ? schedule.getPriceChild() : adultPrice.multiply(new BigDecimal("0.75"));
+        BigDecimal infantPrice = schedule.getPriceInfant() != null ? schedule.getPriceInfant() : adultPrice.multiply(new BigDecimal("0.10"));
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (PassengerDTO p : req.getPassengers()) {
             String type = p.getType() == null ? "ADULT" : p.getType().toUpperCase();
-            switch (type) {
-                case "CHILD": totalAmount = totalAmount.add(childPrice); break;
-                case "INFANT": totalAmount = totalAmount.add(infantPrice); break;
-                default: totalAmount = totalAmount.add(adultPrice);
+            if ("CHILD".equals(type)) {
+                totalAmount = totalAmount.add(childPrice);
+            } else if ("INFANT".equals(type)) {
+                totalAmount = totalAmount.add(infantPrice);
+            } else {
+                totalAmount = totalAmount.add(adultPrice);
             }
         }
+        // Làm tròn tiền
         totalAmount = totalAmount.setScale(0, RoundingMode.HALF_UP);
 
-        if (totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Tổng tiền không hợp lệ"));
-        }
-
-        // 5. TẠO BOOKING
+        // 5. Tạo và Lưu Booking
         Booking booking = new Booking();
         booking.setBookingCode("BK-" + System.currentTimeMillis());
         booking.setBookingDate(LocalDateTime.now());
@@ -118,19 +112,20 @@ public class BookingApiController {
         booking.setSchedule(schedule);
         booking.setTotalAmount(totalAmount);
         booking.setPaidAmount(BigDecimal.ZERO);
-        booking.setDiscountAmount(BigDecimal.ZERO);
-
-        if (req.getPaymentMethod() != null) {
-            try {
-                PaymentMethod pm = PaymentMethod.valueOf(req.getPaymentMethod().toUpperCase());
-                booking.setPaymentMethod(pm);
-            } catch (Exception ex) {
-                booking.setPaymentMethod(null);
-            }
-        }
-
         booking.setNote(req.getNotes());
 
+        // Xử lý phương thức thanh toán
+        if (req.getPaymentMethod() != null) {
+            try {
+                booking.setPaymentMethod(PaymentMethod.valueOf(req.getPaymentMethod().toUpperCase()));
+            } catch (Exception e) {
+                booking.setPaymentMethod(PaymentMethod.CASH);
+            }
+        } else {
+            booking.setPaymentMethod(PaymentMethod.CASH);
+        }
+
+        // Gán thông tin User hoặc Khách lẻ
         if (req.getUserId() != null) {
             User user = userRepo.findById(req.getUserId()).orElse(null);
             booking.setUser(user);
@@ -147,45 +142,48 @@ public class BookingApiController {
 
         Booking savedBooking = bookingRepo.save(booking);
 
-        // 6. LƯU PASSENGER
+        // 6. Lưu danh sách hành khách vào DB
         for (PassengerDTO p : req.getPassengers()) {
             BookingPassenger bp = new BookingPassenger();
             bp.setBooking(savedBooking);
             bp.setFullName(p.getFullName());
             bp.setGender(p.getGender());
-            bp.setType(PassengerType.valueOf(p.getType()));
+            try {
+                bp.setType(PassengerType.valueOf(p.getType()));
+            } catch (Exception e) {
+                bp.setType(PassengerType.ADULT);
+            }
             bp.setDob(p.getDob() != null ? p.getDob() : LocalDate.now());
             passengerRepo.save(bp);
         }
 
-        // 7. TRỪ KHO
-        schedule.setBooked(booked + totalGuests);
+        // 7. Cập nhật số lượng đã đặt (Trừ kho)
+        schedule.setBooked(currentBooked + totalGuests);
         scheduleRepo.save(schedule);
 
-        // ==================================================================
-        // PHẦN 2: THÊM MỚI (TẠO LINK VNPAY)
-        // ==================================================================
-
+        // 8. TẠO LINK THANH TOÁN (VNPAY / MOMO)
         String paymentUrl = "";
+        String method = req.getPaymentMethod() != null ? req.getPaymentMethod().toUpperCase() : "CASH";
 
-        // Chỉ tạo link nếu phương thức thanh toán là VNPAY
-        if (req.getPaymentMethod() != null && "VNPAY".equalsIgnoreCase(req.getPaymentMethod())) {
-            String returnUrl = "http://localhost:8080/api/payment/vnpay-callback";
-
-            // Gọi Service VNPAY, truyền đúng bookingCode vào
+        if ("VNPAY".equals(method)) {
+            // URL trả về phải khớp với PaymentController
+            String returnUrl = "http://localhost:8080/payment/vnpay-callback";
             paymentUrl = vnPayService.createPaymentUrl(
                     savedBooking.getTotalAmount().longValue(),
                     "Thanh toan " + savedBooking.getBookingCode(),
                     returnUrl,
-                    savedBooking.getBookingCode() // Key chính để khớp đơn hàng
+                    savedBooking.getBookingCode()
             );
+        } else if ("MOMO".equals(method)) {
+            paymentUrl = moMoService.createPaymentUrl(savedBooking);
         }
 
-        // 8. TRẢ KẾT QUẢ (Thêm paymentUrl vào response)
+        // 9. Trả về kết quả cho Frontend
         Map<String, Object> resp = new HashMap<>();
+        resp.put("id", savedBooking.getId()); // QUAN TRỌNG: ID để chuyển sang trang QR
         resp.put("bookingCode", savedBooking.getBookingCode());
-        resp.put("totalAmount", totalAmount);
-        resp.put("paymentUrl", paymentUrl); // Frontend sẽ nhận link này
+        resp.put("totalAmount", savedBooking.getTotalAmount());
+        resp.put("paymentUrl", paymentUrl);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }

@@ -37,8 +37,7 @@
               <th>Mã đơn</th>
               <th>Khách đặt</th>
               <th>Thông tin Tour</th>
-              <th>Tổng tiền / TT</th>
-              <th>Trạng thái</th>
+              <th>Thanh toán</th> <th>Trạng thái</th>
               <th>Thao tác</th>
             </tr>
             </thead>
@@ -68,13 +67,26 @@
               </td>
               <td>
                 <div class="fw-bold text-danger" th:text="${#numbers.formatDecimal(b.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></div>
-                <small class="badge bg-light text-dark border" th:text="${b.paymentMethod}"></small>
+                <div class="mt-1">
+                    <span th:if="${b.paymentMethod == 'MOMO'}" class="badge bg-danger border border-light">
+                        <i class="bi bi-wallet2"></i> MoMo
+                    </span>
+                  <span th:if="${b.paymentMethod == 'VNPAY'}" class="badge bg-primary border border-light">
+                        <i class="bi bi-credit-card"></i> VNPay
+                    </span>
+                  <span th:if="${b.paymentMethod == 'BANK_TRANSFER'}" class="badge bg-info text-dark border border-light">
+                        <i class="bi bi-qr-code"></i> Chuyển khoản
+                    </span>
+                  <span th:if="${b.paymentMethod == 'CASH'}" class="badge bg-success border border-light">
+                        <i class="bi bi-cash-stack"></i> Tiền mặt
+                    </span>
+                </div>
               </td>
               <td>
-                <span th:if="${b.status == 'PENDING'}" class="badge bg-warning text-dark">Chờ TT</span>
-                <span th:if="${b.status == 'PAID_FULL'}" class="badge bg-success">Đã thanh toán</span>
+                <span th:if="${b.status == 'PENDING'}" class="badge bg-warning text-dark">⏳ Chờ TT</span>
+                <span th:if="${b.status == 'PAID' or b.status == 'PAID_FULL'}" class="badge bg-success">✅ Đã thanh toán</span>
                 <span th:if="${b.status == 'DEPOSITED'}" class="badge bg-info">Đã cọc</span>
-                <span th:if="${b.status == 'CANCELLED'}" class="badge bg-danger">Hủy</span>
+                <span th:if="${b.status == 'CANCELLED'}" class="badge bg-danger">Đã hủy</span>
               </td>
               <td>
                 <a th:href="@{'/admin/bookings/detail/' + ${b.id}}" class="btn btn-sm btn-info text-white">

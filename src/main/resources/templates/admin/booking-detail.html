@@ -19,9 +19,9 @@
         <form action="/admin/bookings/update-status" method="post" class="d-flex align-items-center gap-2">
           <input type="hidden" name="id" th:value="${booking.id}">
           <select name="status" class="form-select fw-bold"
-                  th:classappend="${booking.status == 'PENDING' ? 'text-warning' : (booking.status == 'PAID_FULL' ? 'text-success' : 'text-danger')}">
+                  th:classappend="${booking.status == 'PENDING' ? 'text-warning' : (booking.status == 'PAID' || booking.status == 'PAID_FULL' ? 'text-success' : 'text-danger')}">
             <option value="PENDING" th:selected="${booking.status == 'PENDING'}">⏳ Chờ thanh toán</option>
-            <option value="PAID_FULL" th:selected="${booking.status == 'PAID_FULL'}">✅ Đã thanh toán</option>
+            <option value="PAID" th:selected="${booking.status == 'PAID' or booking.status == 'PAID_FULL'}">✅ Đã thanh toán</option>
             <option value="CANCELLED" th:selected="${booking.status == 'CANCELLED'}">❌ Đã hủy</option>
           </select>
           <button type="submit" class="btn btn-primary">Cập nhật</button>
@@ -83,6 +83,8 @@
               </div>
               <div th:unless="${booking.user != null}">
                 <p class="text-muted">Khách đặt không qua tài khoản.</p>
+                <p class="mb-1"><strong>Họ tên:</strong> <span th:text="${booking.customerName}"></span></p>
+                <p class="mb-1"><strong>SĐT:</strong> <span th:text="${booking.customerPhone}"></span></p>
               </div>
               <hr>
               <p class="mb-1"><strong>Ghi chú:</strong></p>
@@ -94,8 +96,35 @@
             <div class="card-body">
               <h5 class="card-title">Tổng thanh toán</h5>
               <h2 class="text-danger fw-bold" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></h2>
-              <p class="mb-1">Phương thức: <span class="fw-bold" th:text="${booking.paymentMethod}"></span></p>
-              <p>Ngày đặt: <span th:text="${#temporals.format(booking.bookingDate, 'dd/MM/yyyy HH:mm')}"></span></p>
+
+              <div class="mb-3 mt-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <strong>Phương thức:</strong>
+                  <span th:if="${booking.paymentMethod == 'MOMO'}" class="badge bg-danger p-2">
+                        <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" width="20" class="me-1 bg-white rounded-circle"> Ví MoMo
+                    </span>
+                  <span th:if="${booking.paymentMethod == 'VNPAY'}" class="badge bg-primary p-2">
+                        <img src="https://vnpay.vn/assets/images/logo-icon/logo-primary.svg" width="40" class="bg-white rounded px-1">
+                    </span>
+                  <span th:if="${booking.paymentMethod == 'BANK_TRANSFER'}" class="badge bg-info text-dark p-2">
+                        <i class="bi bi-qr-code"></i> Chuyển khoản QR
+                    </span>
+                  <span th:if="${booking.paymentMethod == 'CASH'}" class="badge bg-success p-2">
+                        <i class="bi bi-cash"></i> Tiền mặt
+                    </span>
+                </div>
+                <p class="small text-muted mb-0">Ngày đặt: <span th:text="${#temporals.format(booking.bookingDate, 'dd/MM/yyyy HH:mm')}"></span></p>
+              </div>
+
+              <div th:if="${booking.status == 'PENDING'}" class="d-grid mt-3">
+                <hr>
+                <p class="small text-center text-muted mb-2"><i class="bi bi-info-circle"></i> Nếu khách đã chuyển khoản nhưng hệ thống chưa cập nhật, hãy xác nhận thủ công:</p>
+                <a th:href="@{/admin/bookings/approve/{id}(id=${booking.id})}"
+                   class="btn btn-warning fw-bold text-dark"
+                   onclick="return confirm('Xác nhận đã nhận đủ tiền từ khách? Trạng thái đơn sẽ chuyển sang ĐÃ THANH TOÁN.');">
+                  <i class="bi bi-check-circle-fill"></i> XÁC NHẬN ĐÃ THU TIỀN
+                </a>
+              </div>
             </div>
           </div>
         </div>

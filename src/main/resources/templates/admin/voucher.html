@@ -16,29 +16,40 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
+            <div th:if="${isEditMode}" class="alert alert-warning border-start border-4 border-warning">
+                <i class="bi bi-pencil-square"></i> Bạn đang chỉnh sửa Voucher.
+                <a href="/admin/vouchers" class="fw-bold text-dark ms-2">Hủy bỏ</a>
+            </div>
+
             <div class="row">
                 <div class="col-xl-4 col-md-12 mb-4">
                     <div class="card shadow-sm border-0 border-top border-4 border-primary">
                         <div class="card-header bg-white fw-bold">
-                            <i class="bi bi-plus-circle"></i> Tạo Mã Giảm Giá Mới
+                            <i class="bi" th:classappend="${isEditMode} ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
+                            <span th:text="${isEditMode} ? 'Cập nhật Voucher' : 'Tạo Mã Giảm Giá Mới'"></span>
                         </div>
                         <div class="card-body">
-                            <form action="/admin/vouchers/create" method="post" th:object="${newVoucher}">
+                            <form th:action="@{/admin/vouchers/create}" method="post" th:object="${newVoucher}">
+                                <input type="hidden" th:field="*{id}">
+
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Mã Code (Viết liền, in hoa)</label>
-                                    <input type="text" th:field="*{code}" class="form-control text-uppercase" placeholder="VD: HE2025" required>
+                                    <label class="form-label fw-bold">Mã Code</label>
+                                    <input type="text" th:field="*{code}" class="form-control text-uppercase"
+                                           placeholder="VD: HE2025" required
+                                           th:readonly="${isEditMode == true}">
+                                    <div th:if="${isEditMode}" class="form-text text-muted">Không thể thay đổi mã khi đang sửa.</div>
                                 </div>
 
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Giá trị giảm</label>
-                                        <input type="number" th:field="*{discountValue}" class="form-control" required>
+                                        <input type="number" th:field="*{discountValue}" class="form-control" required min="1">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Loại giảm</label>
-                                        <select th:field="*{isPercent}" class="form-select">
-                                            <option value="false">Tiền mặt (VNĐ)</option>
-                                            <option value="true">Phần trăm (%)</option>
+                                        <select th:field="*{discountType}" class="form-select">
+                                            <option value="AMOUNT">Tiền mặt (VNĐ)</option>
+                                            <option value="PERCENT">Phần trăm (%)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -46,7 +57,7 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Số lượng</label>
-                                        <input type="number" th:field="*{quantity}" class="form-control" value="100" required>
+                                        <input type="number" th:field="*{quantity}" class="form-control" value="100" required min="1">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Hạn sử dụng</label>
@@ -54,8 +65,12 @@
                                     </div>
                                 </div>
 
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu Voucher</button>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn" th:classappend="${isEditMode} ? 'btn-warning' : 'btn-primary'">
+                                        <i class="bi" th:classappend="${isEditMode} ? 'bi-save' : 'bi-plus-circle'"></i>
+                                        <span th:text="${isEditMode} ? 'Lưu thay đổi' : 'Lưu Voucher'"></span>
+                                    </button>
+                                    <a th:if="${isEditMode}" href="/admin/vouchers" class="btn btn-outline-secondary">Quay lại thêm mới</a>
                                 </div>
                             </form>
                         </div>
@@ -73,43 +88,45 @@
                                 <tr>
                                     <th>Mã Code</th>
                                     <th>Mức giảm</th>
-                                    <th>Số lượng</th>
+                                    <th>SL</th>
                                     <th>Hạn dùng</th>
-                                    <th>Trạng thái</th> <th>Thao tác</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr th:each="v : ${vouchers}">
+                                <tr th:each="v : ${vouchers}" th:classappend="${newVoucher.id == v.id} ? 'table-warning' : ''">
                                     <td class="fw-bold text-primary" th:text="${v.code}"></td>
 
                                     <td>
-                                        <span th:if="${v.isPercent}" class="badge bg-info text-dark">Giảm [[${v.discountValue}]]%</span>
-                                        <span th:unless="${v.isPercent}" class="badge bg-success">Giảm [[${#numbers.formatDecimal(v.discountValue, 0, 'COMMA', 0, 'POINT')}]] đ</span>
+                                        <span th:if="${v.discountType != null and v.discountType.name() == 'PERCENT'}" class="badge bg-info text-dark">
+                                            Giảm <span th:text="${#numbers.formatDecimal(v.discountValue, 0, 0)}"></span>%
+                                        </span>
+                                        <span th:if="${v.discountType != null and v.discountType.name() == 'AMOUNT'}" class="badge bg-success">
+                                            Giảm <span th:text="${#numbers.formatDecimal(v.discountValue, 0, 'COMMA', 0, 'POINT')}"></span> đ
+                                        </span>
                                     </td>
 
                                     <td th:text="${v.quantity}"></td>
-
                                     <td th:text="${#temporals.format(v.expiryDate, 'dd/MM/yyyy')}"></td>
 
                                     <td>
-                <span th:if="${v.expiryDate.isBefore(today)}" class="badge bg-secondary">
-                    <i class="bi bi-x-circle"></i> Đã hết hạn
-                </span>
-
-                                        <span th:unless="${v.expiryDate.isBefore(today)}" class="badge bg-success">
-                    <i class="bi bi-check-circle"></i> Đang hoạt động
-                </span>
+                                        <span th:if="${v.expiryDate.isBefore(today)}" class="badge bg-secondary">Hết hạn</span>
+                                        <span th:unless="${v.expiryDate.isBefore(today)}" class="badge bg-success">Hoạt động</span>
                                     </td>
 
                                     <td>
+                                        <a th:href="@{'/admin/vouchers/edit/' + ${v.id}}" class="btn btn-sm btn-primary" title="Sửa">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+
                                         <a th:href="@{'/admin/vouchers/delete/' + ${v.id}}"
-                                           class="btn btn-sm btn-danger"
-                                           onclick="return confirm('Xóa mã này?')">
+                                           class="btn btn-sm btn-danger ms-1"
+                                           onclick="return confirm('Xóa mã này?')" title="Xóa">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </td>
                                 </tr>
-
                                 <tr th:if="${#lists.isEmpty(vouchers)}">
                                     <td colspan="6" class="text-center text-muted py-4">Chưa có mã giảm giá nào.</td>
                                 </tr>
