@@ -21,9 +21,16 @@
               <form action="/admin/bookings" method="get" class="d-flex justify-content-end">
                 <div class="input-group" style="max-width: 300px;">
                   <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+
                   <input type="text" name="search" class="form-control"
-                         placeholder="Nhập mã đơn (VD: BK-TEST...)"
-                         th:value="${searchCode}"> <button type="submit" class="btn btn-primary">Tìm</button>
+                         th:value="${searchCode}"
+                         placeholder="Nhập mã đơn...">
+
+                  <button class="btn btn-primary" type="submit">Tìm</button>
+
+                  <a th:if="${searchCode != null && searchCode != ''}" href="/admin/bookings" class="btn btn-secondary">
+                    <i class="bi bi-x-lg"></i>
+                  </a>
                 </div>
               </form>
             </div>
@@ -83,10 +90,21 @@
                 </div>
               </td>
               <td>
-                <span th:if="${b.status == 'PENDING'}" class="badge bg-warning text-dark">⏳ Chờ TT</span>
-                <span th:if="${b.status == 'PAID' or b.status == 'PAID_FULL'}" class="badge bg-success">✅ Đã thanh toán</span>
-                <span th:if="${b.status == 'DEPOSITED'}" class="badge bg-info">Đã cọc</span>
-                <span th:if="${b.status == 'CANCELLED'}" class="badge bg-danger">Đã hủy</span>
+                <span th:if="${b.status.name() == 'PENDING'}" class="badge bg-warning text-dark">
+                    <i class="bi bi-hourglass-split"></i> Chờ TT
+                </span>
+
+                <span th:if="${b.status.name() == 'DEPOSITED'}" class="badge bg-info text-dark">
+                    <i class="bi bi-cash-coin"></i> Đã cọc
+                </span>
+
+                <span th:if="${b.status.name() == 'PAID'}" class="badge bg-success">
+                    <i class="bi bi-check-circle-fill"></i> Đã thanh toán
+                </span>
+
+                <span th:if="${b.status.name() == 'CANCELLED'}" class="badge bg-danger">
+                    <i class="bi bi-x-circle-fill"></i> Đã hủy
+                </span>
               </td>
               <td>
                 <a th:href="@{'/admin/bookings/detail/' + ${b.id}}" class="btn btn-sm btn-info text-white">

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{client-layout :: head('Thanh toán Chuyển khoản')}"></head>
+<body class="bg-light">
+<nav th:replace="~{client-layout :: navbar}"></nav>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h5 class="mb-0 fw-bold"><i class="fa-solid fa-qrcode me-2"></i>Quét mã thanh toán</h5>
+        </div>
+        <div class="card-body text-center p-4">
+          <p class="text-muted">Dùng App Ngân hàng hoặc Ví điện tử để quét</p>
+          <div class="p-2 border rounded-3 d-inline-block mb-3 bg-white shadow-sm">
+            <img th:src="${qrUrl}" class="img-fluid" style="max-width: 300px;" alt="QR Code">
+          </div>
+          <div class="alert alert-warning text-start small mb-4">
+            <i class="fa-solid fa-circle-info text-warning me-1"></i>Hệ thống tự điền <strong>Số tiền</strong> và <strong>Nội dung</strong>. Vui lòng không sửa đổi.
+          </div>
+          <ul class="list-group list-group-flush text-start mb-4 small">
+            <li class="list-group-item d-flex justify-content-between"><span>Đơn hàng:</span><strong class="text-primary" th:text="${booking.bookingCode}"></strong></li>
+            <li class="list-group-item d-flex justify-content-between"><span>Số tài khoản:</span><strong th:text="${accNo}"></strong></li>
+            <li class="list-group-item d-flex justify-content-between"><span>Chủ tài khoản:</span><strong th:text="${accName}"></strong></li>
+            <li class="list-group-item d-flex justify-content-between"><span>Số tiền:</span><strong class="text-danger fs-6" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></strong></li>
+          </ul>
+          <div class="d-grid gap-2">
+            <a href="/booking/history" class="btn btn-success btn-lg fw-bold"><i class="fa-solid fa-check me-2"></i> Tôi đã chuyển tiền</a>
+            <a href="/" class="btn btn-outline-secondary">Về trang chủ</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer th:replace="~{client-layout :: footer}"></footer>
+<div th:replace="~{client-layout :: scripts}"></div>
+</body>
+</html>

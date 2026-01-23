@@ -18,13 +18,21 @@
 
         <form action="/admin/bookings/update-status" method="post" class="d-flex align-items-center gap-2">
           <input type="hidden" name="id" th:value="${booking.id}">
+
           <select name="status" class="form-select fw-bold"
-                  th:classappend="${booking.status == 'PENDING' ? 'text-warning' : (booking.status == 'PAID' || booking.status == 'PAID_FULL' ? 'text-success' : 'text-danger')}">
-            <option value="PENDING" th:selected="${booking.status == 'PENDING'}">⏳ Chờ thanh toán</option>
-            <option value="PAID" th:selected="${booking.status == 'PAID' or booking.status == 'PAID_FULL'}">✅ Đã thanh toán</option>
-            <option value="CANCELLED" th:selected="${booking.status == 'CANCELLED'}">❌ Đã hủy</option>
+                  th:classappend="${booking.status.name() == 'PENDING' ? 'text-warning' :
+                             (booking.status.name() == 'PAID' ? 'text-success' :
+                             (booking.status.name() == 'DEPOSITED' ? 'text-info' : 'text-danger'))}">
+
+            <option value="PENDING" th:selected="${booking.status.name() == 'PENDING'}">⏳ Chờ thanh toán</option>
+            <option value="DEPOSITED" th:selected="${booking.status.name() == 'DEPOSITED'}">💰 Đã đặt cọc</option>
+            <option value="PAID" th:selected="${booking.status.name() == 'PAID'}">✅ Đã thanh toán</option>
+            <option value="CANCELLED" th:selected="${booking.status.name() == 'CANCELLED'}">❌ Đã hủy</option>
           </select>
-          <button type="submit" class="btn btn-primary">Cập nhật</button>
+
+          <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Bạn có chắc muốn đổi trạng thái đơn hàng này?');">
+            <i class="bi bi-save"></i> Cập nhật
+          </button>
         </form>
       </div>
 

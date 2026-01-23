@@ -2,6 +2,7 @@ package fit.se.springdatathymleafshopping.controllers.api;
 
 import fit.se.springdatathymleafshopping.entities.Review;
 import fit.se.springdatathymleafshopping.entities.User;
+import fit.se.springdatathymleafshopping.entities.enums.BookingStatus;
 import fit.se.springdatathymleafshopping.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +40,7 @@ public class ReviewApiController {
             boolean hasBooked = bookingRepository.existsByUserIdAndSchedule_Tour_IdAndStatus(
                     user.getId(),
                     tourId,
-                    "PAID_FULL" // Chỉ cho phép review khi đã thanh toán xong/đi xong
+                    BookingStatus.PAID
             );
 
             if (!hasBooked) {
